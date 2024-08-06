@@ -1,0 +1,47 @@
+-- CreateTable
+CREATE TABLE "Order" (
+    "id" SERIAL NOT NULL,
+    "restaurantID" INTEGER NOT NULL,
+    "invoiceID" INTEGER NOT NULL,
+    "paymentTypeID" INTEGER NOT NULL,
+    "orderTypeID" INTEGER NOT NULL,
+    "paymentStatus" TEXT NOT NULL,
+    "cancelReason" TEXT,
+    "orderAmount" DOUBLE PRECISION NOT NULL,
+    "discount" DOUBLE PRECISION NOT NULL,
+    "netAmountAfterDiscount" DOUBLE PRECISION NOT NULL,
+    "containerCharges" DOUBLE PRECISION NOT NULL,
+    "deliveryCharges" DOUBLE PRECISION NOT NULL,
+    "serviceCharges" DOUBLE PRECISION NOT NULL,
+    "totalTax" DOUBLE PRECISION NOT NULL,
+    "totalAmount" DOUBLE PRECISION NOT NULL,
+    "nonTaxableAmount" DOUBLE PRECISION NOT NULL,
+    "CGST" DOUBLE PRECISION NOT NULL,
+    "SGST" DOUBLE PRECISION NOT NULL,
+    "VAT" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OrderItem" (
+    "id" SERIAL NOT NULL,
+    "orderID" INTEGER NOT NULL,
+    "itemID" INTEGER NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "priceAmount" DOUBLE PRECISION NOT NULL,
+    "discountAmount" DOUBLE PRECISION NOT NULL,
+    "CGST" DOUBLE PRECISION NOT NULL,
+    "SGST" DOUBLE PRECISION NOT NULL,
+    "VAT" DOUBLE PRECISION NOT NULL,
+    "totalAmount" DOUBLE PRECISION NOT NULL,
+    "packagingCharges" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "NCFlag" BOOLEAN NOT NULL,
+
+    CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
+);
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderID_fkey" FOREIGN KEY ("orderID") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
