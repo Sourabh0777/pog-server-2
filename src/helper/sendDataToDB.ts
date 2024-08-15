@@ -29,7 +29,7 @@ export const sendDataToDb = async (response: any) => {
             CGST: parseFloat(Order.tax),
             SGST: parseFloat(Order.tax),
             VAT: parseFloat(Order.tax),
-            items: {
+            OrderItem: {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               create: OrderItem.map((item: any) => ({
                 itemID: parseInt(item.item_id),
