@@ -1,0 +1,59 @@
+docker run -p 9092:9092 apache/kafka:3.7.1
+
+interface SQSMessage extends AWS.SQS.Message {
+  Body: string;
+}
+
+// const receiveMessage = async () => {
+//   try {
+//     console.log('Polling for messages...');
+//     const data = await sqs.receiveMessage(params).promise();
+
+//     if (data.Messages && data.Messages.length > 0) {
+//       const message = data.Messages[0] as SQSMessage; // Cast to SQSMessage
+//       console.log('Message received:', message);
+
+//       // Process the message here
+//       await processMessage(message);
+
+//       // Delete the message after processing
+//       const deleteParams: AWS.SQS.DeleteMessageRequest = {
+//         QueueUrl: queueURL,
+//         ReceiptHandle: message.ReceiptHandle,
+//       };
+
+//       const deleteData = await sqs.deleteMessage(deleteParams).promise();
+//       console.log('Message deleted successfully', deleteData);
+//     } else {
+//       console.log('No messages received');
+//     }
+//   } catch (err) {
+//     console.error('Error receiving message:', err);
+//   }
+// };
+
+// const processMessage = async (message: SQSMessage) => {
+//   // Implement your message processing logic here
+//   console.log('Processing message:', message.Body);
+//   // Simulate processing time
+//   await new Promise(resolve => setTimeout(resolve, 1000));
+// };
+
+
+
+Old Code 
+        // Process the message here
+
+        // Delete the message after processing
+        // const deleteParams = {
+        //   QueueUrl: queueURL,
+        //   ReceiptHandle: message.ReceiptHandle,
+        // };
+
+        // sqs.deleteMessage(deleteParams, (err, data) => {
+        //   if (err) {
+        //     console.log('Delete Error', err);
+        //   } else {
+        //     console.log('Message Deleted', data);
+        //   }
+        // });

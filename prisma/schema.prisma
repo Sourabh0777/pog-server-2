@@ -1,0 +1,1282 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model FoodTrialSpoilage {
+  id                  Int      @id @default(autoincrement())
+  date                DateTime
+  category            Category
+  itemName            String
+  restaurantSKUItemId String
+  rate                Float
+  quantity            Int
+  amount              Float
+  trialBy             String
+  remark              String?
+  reason              String?
+  vendorName          String
+  createdAt           DateTime @default(now())
+
+  @@index([date])
+  @@index([itemName])
+  @@index([restaurantSKUItemId])
+  @@index([vendorName])
+}
+
+model Order {
+  id                     Int         @id @default(autoincrement())
+  restaurantID           Int
+  invoiceID              Int
+  paymentTypeID          Int
+  orderTypeID            Int
+  paymentStatus          String
+  cancelReason           String?
+  orderAmount            Float?
+  discount               Float?
+  netAmountAfterDiscount Float?
+  containerCharges       Float?
+  deliveryCharges        Float?
+  serviceCharges         Float?
+  totalTax               Float?
+  totalAmount            Float?
+  nonTaxableAmount       Float?
+  CGST                   Float?
+  SGST                   Float?
+  VAT                    Float?
+  createdAt              DateTime    @default(now())
+  OrderItem              OrderItem[]
+}
+
+model OrderItem {
+  id               Int      @id @default(autoincrement())
+  orderID          Int
+  itemID           Int
+  quantity         Int?
+  priceAmount      Float?
+  discountAmount   Float?
+  CGST             Float?
+  SGST             Float?
+  VAT              Float?
+  totalAmount      Float
+  packagingCharges Float?
+  createdAt        DateTime @default(now())
+  NCFlag           Boolean
+  Order            Order    @relation(fields: [orderID], references: [id])
+}
+
+model admin_permissions {
+  id                   String        @id
+  accessPermissionName String        @unique
+  slug                 String        @unique
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime
+  enabled              Boolean       @default(true)
+  admin_roles          admin_roles[] @relation("admin_permissionsToadmin_roles")
+}
+
+model admin_roles {
+  id                String              @id
+  roleName          String              @unique
+  slug              String              @unique
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  enabled           Boolean             @default(true)
+  admin_users       admin_users[]
+  admin_permissions admin_permissions[] @relation("admin_permissionsToadmin_roles")
+}
+
+model admin_users {
+  id                              String                            @id
+  firstName                       String
+  lastName                        String?
+  email                           String                            @unique
+  phoneNumber                     String                            @unique
+  addressLine1                    String?
+  addressLine2                    String?
+  city                            String?
+  state                           String?
+  country                         String?
+  zipCode                         Int?
+  countryCode                     String?
+  gender                          String?
+  dateOfBirth                     DateTime?
+  userName                        String                            @unique
+  password                        String
+  userImageLink                   String?
+  admin_rolesId                   String
+  createdAt                       DateTime                          @default(now())
+  updatedAt                       DateTime
+  enabled                         Boolean                           @default(true)
+  userType                        String                            @default("admin")
+  admin_roles                     admin_roles                       @relation(fields: [admin_rolesId], references: [id])
+  document_uploads_tracking_table document_uploads_tracking_table[]
+  expense_tally_data_categories   expense_tally_data_categories[]
+}
+
+model discount_coupons {
+  id                      String                    @id
+  couponName              String                    @unique
+  enabled                 Boolean                   @default(true)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  discount_orders_summary discount_orders_summary[]
+  permanent_order_master  permanent_order_master[]
+  temporary_order_master  temporary_order_master[]
+}
+
+model discount_orders_summary {
+  id                              String                           @id
+  documentUploadTrackingTableID   String?
+  createdDate                     String
+  invoiceNo                       String
+  coupon                          String
+  discountType                    String?
+  reason                          String?
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime
+  discount_couponsID              String?
+  orderType                       String?
+  discount_coupons                discount_coupons?                @relation(fields: [discount_couponsID], references: [id])
+  document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+}
+
+model document_uploads_tracking_table {
+  id                                        String                                      @id
+  restaurantUserID                          String?
+  adminUserID                               String?
+  documentCategory                          DocumentCategory
+  createdAt                                 DateTime                                    @default(now())
+  updatedAt                                 DateTime
+  restaurantID                              String?
+  AllFilesDataIsUploaded                    Boolean                                     @default(false)
+  discount_orders_summary                   discount_orders_summary[]
+  admin_users                               admin_users?                                @relation(fields: [adminUserID], references: [id])
+  restaurant                                restaurant?                                 @relation(fields: [restaurantID], references: [id])
+  restaurant_users                          restaurant_users?                           @relation(fields: [restaurantUserID], references: [id])
+  fileTrackingTables                        fileTrackingTables[]
+  hr_payroll_data                           hr_payroll_data[]
+  order_audit_item_wise                     order_audit_item_wise[]
+  order_modifiction_reports                 order_modifiction_reports[]
+  order_reports_payment_wise                order_reports_payment_wise[]
+  permanent_item_report_with_customer_order permanent_item_report_with_customer_order[]
+  permanent_order_master                    permanent_order_master[]
+  swiggy                                    swiggy[]
+  temporary_item_report_with_customer_order temporary_item_report_with_customer_order[]
+  temporary_order_master                    temporary_order_master[]
+  unit_expenses_tally_data                  unit_expenses_tally_data[]
+  zomato                                    zomato[]
+}
+
+model expense_tally_data_categories {
+  id                       String                     @id
+  categoryName             String
+  slug                     String                     @unique
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime
+  enabled                  Boolean                    @default(false)
+  approvedByUserID         String?
+  admin_users              admin_users?               @relation(fields: [approvedByUserID], references: [id])
+  unit_expenses_tally_data unit_expenses_tally_data[]
+}
+
+model fileTrackingTables {
+  id                              String                           @id
+  documentUploadTrackingTableID   String?
+  fileName                        String
+  fileURL                         String
+  mainTableUpdated                Boolean                          @default(false)
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime
+  document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+}
+
+model gas_readings {
+  id                                                               String            @id
+  date                                                             DateTime
+  LPG                                                              Int
+  Amount                                                           Int
+  openingReading                                                   Int
+  closingReading                                                   Int
+  netReading                                                       Int
+  totalAmount                                                      Int
+  covers                                                           Int
+  PPC                                                              Int
+  restaurantUserID                                                 String
+  approvalStatus                                                   Boolean           @default(false)
+  createdAt                                                        DateTime          @default(now())
+  updatedAt                                                        DateTime
+  createdByUserID                                                  String?
+  updatedByUserID                                                  String?
+  approvedByUserID                                                 String?
+  monthIndex                                                       Int?
+  year                                                             Int?
+  restaurant_users_gas_readings_approvedByUserIDTorestaurant_users restaurant_users? @relation("gas_readings_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_gas_readings_createdByUserIDTorestaurant_users  restaurant_users? @relation("gas_readings_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_users_gas_readings_restaurantUserIDTorestaurant_users restaurant_users  @relation("gas_readings_restaurantUserIDTorestaurant_users", fields: [restaurantUserID], references: [id])
+  restaurant_users_gas_readings_updatedByUserIDTorestaurant_users  restaurant_users? @relation("gas_readings_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+}
+
+model hr_payroll_data {
+  id                              String                           @id
+  documentUploadTrackingTableID   String?
+  restaurantID                    String?
+  employeeCode                    String
+  basicSalary                     Int
+  incentives                      Int                              @default(0)
+  foodDeduction                   Int                              @default(0)
+  grossSalary                     Int
+  totalDeductions                 Int                              @default(0)
+  netSalary                       Int
+  employerPF                      Int                              @default(0)
+  employerCTC                     Int                              @default(0)
+  monthOfSalary                   String
+  yearOfSalary                    String
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime
+  employerAPRF                    Int
+  employerESI                     Int                              @default(0)
+  houseRentAllowance              Int
+  otherAllowances                 Int
+  document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+  restaurant                      restaurant?                      @relation(fields: [restaurantID], references: [id])
+}
+
+model non_cahrgable_items {
+  id                                                                      String                       @id
+  SKUItemVariantID                                                        String                       @unique
+  restaurantUserID                                                        String?                      @unique
+  NonChargableItemDescription                                             String?
+  NonChargableItemQuantity                                                Int?
+  NonChargableItemRate                                                    Int?
+  NonChargableItemAmount                                                  Int?
+  approvalStatus                                                          Boolean                      @default(false)
+  createdAt                                                               DateTime                     @default(now())
+  updatedAt                                                               DateTime
+  createdByUserID                                                         String?
+  updatedByUserID                                                         String?
+  approvedByUserID                                                        String?
+  restaurant_SKU_item_variants                                            restaurant_SKU_item_variants @relation(fields: [SKUItemVariantID], references: [id])
+  restaurant_users_non_cahrgable_items_approvedByUserIDTorestaurant_users restaurant_users?            @relation("non_cahrgable_items_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_non_cahrgable_items_createdByUserIDTorestaurant_users  restaurant_users?            @relation("non_cahrgable_items_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_users_non_cahrgable_items_restaurantUserIDTorestaurant_users restaurant_users?            @relation("non_cahrgable_items_restaurantUserIDTorestaurant_users", fields: [restaurantUserID], references: [id])
+  restaurant_users_non_cahrgable_items_updatedByUserIDTorestaurant_users  restaurant_users?            @relation("non_cahrgable_items_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+}
+
+model non_chargable_category {
+  id                                                                         String            @id
+  nonChargableCategoryName                                                   String            @unique
+  createdAt                                                                  DateTime          @default(now())
+  updatedAt                                                                  DateTime
+  createdByUserID                                                            String?
+  updatedByUserID                                                            String?
+  approvedByUserID                                                           String?
+  restaurant_users_non_chargable_category_approvedByUserIDTorestaurant_users restaurant_users? @relation("non_chargable_category_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_non_chargable_category_createdByUserIDTorestaurant_users  restaurant_users? @relation("non_chargable_category_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_users_non_chargable_category_updatedByUserIDTorestaurant_users  restaurant_users? @relation("non_chargable_category_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+}
+
+model non_chargeable_sale_categories {
+  id                                                                                 String                 @id
+  createdByUserID                                                                    String?
+  updatedByUserID                                                                    String?
+  approvedByUserID                                                                   String?
+  createdAt                                                                          DateTime               @default(now())
+  updatedAt                                                                          DateTime
+  nonChargeableSaleCategoryName                                                      String
+  restaurant_users_non_chargeable_sale_categories_approvedByUserIDTorestaurant_users restaurant_users?      @relation("non_chargeable_sale_categories_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id], onDelete: Cascade)
+  restaurant_users_non_chargeable_sale_categories_createdByUserIDTorestaurant_users  restaurant_users?      @relation("non_chargeable_sale_categories_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id], onDelete: Cascade)
+  restaurant_users_non_chargeable_sale_categories_updatedByUserIDTorestaurant_users  restaurant_users?      @relation("non_chargeable_sale_categories_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id], onDelete: Cascade)
+  non_chargeable_sales                                                               non_chargeable_sales[]
+}
+
+model non_chargeable_sales {
+  id                                                                       String                         @id
+  nonChargeableSaleCategoryID                                              String
+  restaurantSKUItemVariantID                                               String?
+  storeSKUItemVarintID                                                     String?
+  quantity                                                                 Int
+  monthIndex                                                               Int
+  year                                                                     Int
+  amount                                                                   Int
+  restaurantID                                                             String?
+  createdByUserID                                                          String?
+  updatedByUserID                                                          String?
+  approvedByUserID                                                         String?
+  createdAt                                                                DateTime                       @default(now())
+  updatedAt                                                                DateTime
+  restaurant_users_non_chargeable_sales_approvedByUserIDTorestaurant_users restaurant_users?              @relation("non_chargeable_sales_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id], onDelete: Cascade)
+  restaurant_users_non_chargeable_sales_createdByUserIDTorestaurant_users  restaurant_users?              @relation("non_chargeable_sales_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id], onDelete: Cascade)
+  non_chargeable_sale_categories                                           non_chargeable_sale_categories @relation(fields: [nonChargeableSaleCategoryID], references: [id])
+  restaurant_SKU_item_variants                                             restaurant_SKU_item_variants?  @relation(fields: [restaurantSKUItemVariantID], references: [id])
+  store_SKU_item_variants                                                  store_SKU_item_variants?       @relation(fields: [storeSKUItemVarintID], references: [id])
+  restaurant_users_non_chargeable_sales_updatedByUserIDTorestaurant_users  restaurant_users?              @relation("non_chargeable_sales_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id], onDelete: Cascade)
+  non_chargeable_sales_entries                                             non_chargeable_sales_entries[]
+}
+
+model non_chargeable_sales_entries {
+  id                                                                               String               @id
+  ncItemSalesID                                                                    String
+  date                                                                             String
+  quantity                                                                         Int
+  createdByUserID                                                                  String?
+  updatedByUserID                                                                  String?
+  approvedByUserID                                                                 String?
+  trailedByUser                                                                    String?
+  reason                                                                           String?
+  createdAt                                                                        DateTime             @default(now())
+  updatedAt                                                                        DateTime
+  amount                                                                           Int                  @default(0)
+  restaurant_users_non_chargeable_sales_entries_approvedByUserIDTorestaurant_users restaurant_users?    @relation("non_chargeable_sales_entries_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id], onDelete: Cascade)
+  restaurant_users_non_chargeable_sales_entries_createdByUserIDTorestaurant_users  restaurant_users?    @relation("non_chargeable_sales_entries_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id], onDelete: Cascade)
+  non_chargeable_sales                                                             non_chargeable_sales @relation(fields: [ncItemSalesID], references: [id])
+  restaurant_users_non_chargeable_sales_entries_updatedByUserIDTorestaurant_users  restaurant_users?    @relation("non_chargeable_sales_entries_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id], onDelete: Cascade)
+}
+
+model order_audit_item_wise {
+  id                              String                           @id
+  documentUploadTrackingTableID   String?
+  invoiceNo                       String
+  itemModifiedDate                String
+  byUser                          String?
+  oldValue                        Int
+  newValue                        Int
+  itemStataus                     String
+  when                            String
+  reason                          String
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime
+  orderType                       String?
+  document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+}
+
+model order_modifiction_reports {
+  id                              String                           @id
+  documentUploadTrackingTableID   String?
+  invoiceNo                       String
+  date                            String
+  changeLog                       String
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime
+  document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+}
+
+model order_reports_payment_wise {
+  id                              String                           @id
+  documentUploadTrackingTableID   String?
+  invoiceNo                       String
+  cash                            Int                              @default(0)
+  card                            Int                              @default(0)
+  duePayment                      Int                              @default(0)
+  other                           Int                              @default(0)
+  wallet                          Int                              @default(0)
+  online                          Int                              @default(0)
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime
+  orderType                       String?
+  document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+}
+
+model order_type {
+  id        String        @id
+  createdAt DateTime      @default(now())
+  updatedAt DateTime
+  orderType OrderTypeEnum
+}
+
+model permanent_item_report_with_customer_order {
+  id                              String                           @id
+  documentUploadTrackingTableID   String?
+  invoiceNo                       Int
+  itemName                        String
+  price                           Int
+  qty                             Int
+  subTotal                        Int
+  discount                        Int                              @default(0)
+  tax                             Int                              @default(0)
+  finalTotal                      Int
+  tableNo                         Int?
+  serverName                      String?
+  covers                          String?
+  variation                       String?
+  category                        String
+  HSN                             String?
+  nonTaxable                      Int                              @default(0)
+  cgstRate                        Int                              @default(0)
+  cgstAmount                      Int                              @default(0)
+  sgstRate                        Int                              @default(0)
+  sgstAmount                      Int                              @default(0)
+  vatRate                         Int                              @default(0)
+  vatAmount                       Int                              @default(0)
+  restaurantSKUItemVairantID      String?
+  restaurantSKUCategoryID         String?
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime
+  orderType                       String?
+  document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+  restaurant_SKU_category         restaurant_SKU_category?         @relation(fields: [restaurantSKUCategoryID], references: [id])
+  restaurant_SKU_item_variants    restaurant_SKU_item_variants?    @relation(fields: [restaurantSKUItemVairantID], references: [id])
+}
+
+model permanent_order_master {
+  id                              String                           @id
+  documentUploadTrackingTableID   String?
+  invoiceNo                       String
+  date                            String
+  biller                          String
+  paymentType                     String
+  orderType                       String
+  status                          String
+  area                            String
+  subOrderType                    String
+  groupName                       String?
+  GSTIN                           String?
+  orderCancelReason               String?
+  myAmount                        Int                              @default(0)
+  discount                        Int                              @default(0)
+  netSales                        Int                              @default(0)
+  deliveryCharge                  Int                              @default(0)
+  containerCharge                 Int                              @default(0)
+  serviceCharge                   Int                              @default(0)
+  totalTax                        Int                              @default(0)
+  roundOff                        Int                              @default(0)
+  waivedOff                       Int                              @default(0)
+  total                           Int                              @default(0)
+  onlineTaxCalculated             Int                              @default(0)
+  gstPaidByMerchant               Int                              @default(0)
+  gstPaidByEcommerce              Int                              @default(0)
+  tip                             Int                              @default(0)
+  nonTaxable                      Int                              @default(0)
+  cgstAmount                      Int                              @default(0)
+  cgst                            Int                              @default(0)
+  sgstAmount                      Int                              @default(0)
+  sgst                            Int                              @default(0)
+  vatAmount                       Int                              @default(0)
+  vat                             Int                              @default(0)
+  itemModifiedDate                String?
+  modifiedByUser                  String?
+  oldValue                        Int?
+  newValue                        Int?
+  itemModificationStatus          String?
+  whenModified                    String?
+  modificationReason              String?
+  changeLog                       String?
+  cash                            Int?                             @default(0)
+  card                            Int?                             @default(0)
+  duePayment                      Int?                             @default(0)
+  other                           Int?                             @default(0)
+  wallet                          Int?                             @default(0)
+  online                          Int?
+  discountCouponID                String?
+  discountType                    String?
+  discountReason                  String?
+  onlinePlatformClientOrderNo     String?
+  orderFromOnlinePlatform         String?
+  onlinePlatformVirtualBrandName  String?
+  onlinePlatformTotal             Int?
+  onlinePlatformOrderID           String?
+  onlinePlatformOrderStatus       String?
+  onlineOrderReceivedTime         String?
+  onlineOrderAcceptedTime         String?
+  onlineOrderMarkReadyTime        String?
+  onlineOrderRiderArrivalTime     String?
+  onlinseOrderPickedUpTime        String?
+  onlineOrderDeliveredTime        String?
+  onlineOrderCancelledTime        String?
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime
+  discount_coupons                discount_coupons?                @relation(fields: [discountCouponID], references: [id])
+  document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+}
+
+model restaurant {
+  id                                                         String                            @id
+  restaurantName                                             String
+  city                                                       String
+  state                                                      String
+  country                                                    String
+  email                                                      String
+  phoneNumber                                                String
+  zipCode                                                    Int
+  countryCode                                                String
+  createdAt                                                  DateTime                          @default(now())
+  updatedAt                                                  DateTime
+  enabled                                                    Boolean                           @default(true)
+  createdBy                                                  String?
+  updatedBy                                                  String?
+  chefID                                                     String?
+  restaurantCode                                             String                            @unique
+  storeID                                                    String?
+  document_uploads_tracking_table                            document_uploads_tracking_table[]
+  hr_payroll_data                                            hr_payroll_data[]
+  restaurant_users_restaurant_chefIDTorestaurant_users       restaurant_users?                 @relation("restaurant_chefIDTorestaurant_users", fields: [chefID], references: [id])
+  restaurant_users_restaurant_storeIDTorestaurant_users      restaurant_users?                 @relation("restaurant_storeIDTorestaurant_users", fields: [storeID], references: [id])
+  restaurant_expenses                                        restaurant_expenses[]
+  restaurant_users_restaurant_users_restaurantIDTorestaurant restaurant_users[]                @relation("restaurant_users_restaurantIDTorestaurant")
+  store_inventory                                            store_inventory[]
+  unit_expenses_tally_data                                   unit_expenses_tally_data[]
+  vendors                                                    vendors[]
+}
+
+model restaurant_SKU_category {
+  id                                                                          String                                      @id
+  SKUCategoryName                                                             String                                      @unique
+  isVeg                                                                       Boolean
+  approvalStatus                                                              Boolean                                     @default(false)
+  createdAt                                                                   DateTime                                    @default(now())
+  updatedAt                                                                   DateTime
+  enabled                                                                     Boolean                                     @default(true)
+  createdByUserID                                                             String?
+  updatedByUserID                                                             String?
+  approvedByUserID                                                            String?
+  permanent_item_report_with_customer_order                                   permanent_item_report_with_customer_order[]
+  restaurant_users_restaurant_SKU_category_approvedByUserIDTorestaurant_users restaurant_users?                           @relation("restaurant_SKU_category_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_restaurant_SKU_category_createdByUserIDTorestaurant_users  restaurant_users?                           @relation("restaurant_SKU_category_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_users_restaurant_SKU_category_updatedByUserIDTorestaurant_users  restaurant_users?                           @relation("restaurant_SKU_category_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+  restaurant_SKU_items                                                        restaurant_SKU_items[]
+  temporary_item_report_with_customer_order                                   temporary_item_report_with_customer_order[]
+}
+
+model restaurant_SKU_groups {
+  id                                                                        String                 @id
+  restaurantSKUGroupName                                                    String                 @unique
+  approvalStatus                                                            Boolean                @default(false)
+  createdAt                                                                 DateTime               @default(now())
+  updatedAt                                                                 DateTime
+  enabled                                                                   Boolean                @default(true)
+  createdByUserID                                                           String?
+  updatedByUserID                                                           String?
+  approvedByUserID                                                          String?
+  restaurant_users_restaurant_SKU_groups_approvedByUserIDTorestaurant_users restaurant_users?      @relation("restaurant_SKU_groups_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_restaurant_SKU_groups_createdByUserIDTorestaurant_users  restaurant_users?      @relation("restaurant_SKU_groups_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_users_restaurant_SKU_groups_updatedByUserIDTorestaurant_users  restaurant_users?      @relation("restaurant_SKU_groups_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+  restaurant_SKU_items                                                      restaurant_SKU_items[]
+}
+
+model restaurant_SKU_item_variants {
+  id                                                                               String                                      @id
+  isNCItem                                                                         Boolean                                     @default(false)
+  SKUItemID                                                                        String
+  SKUItemVariantName                                                               String
+  SKUItemVariantQuantity                                                           Int
+  SKUItemVariantRate                                                               Int
+  SKUItemVariantExpirationDate                                                     DateTime?
+  approvalStatus                                                                   Boolean                                     @default(false)
+  createdAt                                                                        DateTime                                    @default(now())
+  updatedAt                                                                        DateTime
+  enabled                                                                          Boolean                                     @default(true)
+  createdByUserID                                                                  String?
+  updatedByUserID                                                                  String?
+  approvedByUserID                                                                 String?
+  non_cahrgable_items                                                              non_cahrgable_items?
+  non_chargeable_sales                                                             non_chargeable_sales[]
+  permanent_item_report_with_customer_order                                        permanent_item_report_with_customer_order[]
+  restaurant_SKU_items                                                             restaurant_SKU_items                        @relation(fields: [SKUItemID], references: [id])
+  restaurant_users_restaurant_SKU_item_variants_approvedByUserIDTorestaurant_users restaurant_users?                           @relation("restaurant_SKU_item_variants_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_restaurant_SKU_item_variants_createdByUserIDTorestaurant_users  restaurant_users?                           @relation("restaurant_SKU_item_variants_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_users_restaurant_SKU_item_variants_updatedByUserIDTorestaurant_users  restaurant_users?                           @relation("restaurant_SKU_item_variants_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+  temporary_item_report_with_customer_order                                        temporary_item_report_with_customer_order[]
+  waste_management_items                                                           waste_management_items[]
+}
+
+model restaurant_SKU_items {
+  id                                                                       String                         @id
+  SKUItemName                                                              String                         @unique
+  SKUItemMeasurementUnit                                                   String
+  approvalStatus                                                           Boolean                        @default(false)
+  createdAt                                                                DateTime                       @default(now())
+  updatedAt                                                                DateTime
+  enabled                                                                  Boolean                        @default(true)
+  createdByUserID                                                          String?
+  updatedByUserID                                                          String?
+  approvedByUserID                                                         String?
+  restaurantSKUCategoryID                                                  String
+  restaurantSKUGroupID                                                     String?
+  restaurant_SKU_item_variants                                             restaurant_SKU_item_variants[]
+  restaurant_users_restaurant_SKU_items_approvedByUserIDTorestaurant_users restaurant_users?              @relation("restaurant_SKU_items_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_restaurant_SKU_items_createdByUserIDTorestaurant_users  restaurant_users?              @relation("restaurant_SKU_items_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_SKU_category                                                  restaurant_SKU_category        @relation(fields: [restaurantSKUCategoryID], references: [id])
+  restaurant_SKU_groups                                                    restaurant_SKU_groups?         @relation(fields: [restaurantSKUGroupID], references: [id])
+  restaurant_users_restaurant_SKU_items_updatedByUserIDTorestaurant_users  restaurant_users?              @relation("restaurant_SKU_items_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+}
+
+model restaurant_expense_category {
+  id                                                                              String                @id
+  restaurantExpenseCategoryName                                                   String                @unique
+  approvalStatus                                                                  Boolean               @default(false)
+  createdAt                                                                       DateTime              @default(now())
+  updatedAt                                                                       DateTime
+  enabled                                                                         Boolean               @default(true)
+  createdByUserID                                                                 String?
+  updatedByUserID                                                                 String?
+  approvedByUserID                                                                String?
+  restaurant_users_restaurant_expense_category_approvedByUserIDTorestaurant_users restaurant_users?     @relation("restaurant_expense_category_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_restaurant_expense_category_createdByUserIDTorestaurant_users  restaurant_users?     @relation("restaurant_expense_category_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_users_restaurant_expense_category_updatedByUserIDTorestaurant_users  restaurant_users?     @relation("restaurant_expense_category_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+  restaurant_expenses                                                             restaurant_expenses[]
+}
+
+model restaurant_expenses {
+  id                                                                      String                      @id
+  restaurantExpenseCategoryID                                             String
+  restaurantExpenseDescription                                            String
+  restaurantExpenseAmount                                                 Int
+  restaurantExpensePaymentMode                                            String?
+  approvalStatus                                                          Boolean                     @default(false)
+  createdAt                                                               DateTime                    @default(now())
+  updatedAt                                                               DateTime
+  enabled                                                                 Boolean                     @default(true)
+  createdByUserID                                                         String?
+  updatedByUserID                                                         String?
+  approvedByUserID                                                        String?
+  restaurantID                                                            String
+  restaurant_users_restaurant_expenses_approvedByUserIDTorestaurant_users restaurant_users?           @relation("restaurant_expenses_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_restaurant_expenses_createdByUserIDTorestaurant_users  restaurant_users?           @relation("restaurant_expenses_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_expense_category                                             restaurant_expense_category @relation(fields: [restaurantExpenseCategoryID], references: [id])
+  restaurant                                                              restaurant                  @relation(fields: [restaurantID], references: [id])
+  restaurant_users_restaurant_expenses_updatedByUserIDTorestaurant_users  restaurant_users?           @relation("restaurant_expenses_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+}
+
+model restaurant_issued_items {
+  id                            String                        @id
+  restaurantRecquisitionItemID  String
+  quantityIssued                Int
+  remarks                       String?
+  createdAt                     DateTime                      @default(now())
+  updatedAt                     DateTime
+  restaurant_issuesId           String?
+  issueDate                     String
+  purchaseId                    String?
+  storeSKUSectionID             String?
+  store_purchase                store_purchase?               @relation(fields: [purchaseId], references: [id])
+  restaurant_recquisition_items restaurant_recquisition_items @relation(fields: [restaurantRecquisitionItemID], references: [id])
+  restaurant_issues             restaurant_issues?            @relation(fields: [restaurant_issuesId], references: [id])
+  store_SKU_sections            store_SKU_sections?           @relation(fields: [storeSKUSectionID], references: [id])
+}
+
+model restaurant_issues {
+  id                                                                    String                    @id
+  restaurantRecquisitionID                                              String
+  approvalStatus                                                        Boolean                   @default(false)
+  createdAt                                                             DateTime                  @default(now())
+  updatedAt                                                             DateTime
+  enabled                                                               Boolean                   @default(true)
+  createdByUserID                                                       String?
+  updatedByUserID                                                       String?
+  approvedByUserID                                                      String?
+  restaurant_issued_items                                               restaurant_issued_items[]
+  restaurant_users_restaurant_issues_approvedByUserIDTorestaurant_users restaurant_users?         @relation("restaurant_issues_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_restaurant_issues_createdByUserIDTorestaurant_users  restaurant_users?         @relation("restaurant_issues_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_recquisitions                                              restaurant_recquisitions  @relation(fields: [restaurantRecquisitionID], references: [id])
+  restaurant_users_restaurant_issues_updatedByUserIDTorestaurant_users  restaurant_users?         @relation("restaurant_issues_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+}
+
+model restaurant_permissions {
+  id                   String             @id
+  accessPermissionName String             @unique
+  slug                 String             @unique
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime
+  enabled              Boolean            @default(true)
+  restaurant_roles     restaurant_roles[] @relation("restaurant_permissionsTorestaurant_roles")
+}
+
+model restaurant_recquisition_items {
+  id                       String                    @id
+  srNo                     Int
+  SKUItemVariantID         String?
+  stockInHand              Int?
+  requiredQuantity         Int
+  alreadyIssuedQuantity    Int?
+  remarks                  String?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime
+  restaurantRecquisitionID String
+  restaurant_issued_items  restaurant_issued_items[]
+  store_SKU_item_variants  store_SKU_item_variants?  @relation(fields: [SKUItemVariantID], references: [id])
+  restaurant_recquisitions restaurant_recquisitions  @relation(fields: [restaurantRecquisitionID], references: [id])
+}
+
+model restaurant_recquisitions {
+  id                                                                           String                          @id
+  approvalStatus                                                               Boolean                         @default(false)
+  createdAt                                                                    DateTime                        @default(now())
+  updatedAt                                                                    DateTime
+  enabled                                                                      Boolean                         @default(true)
+  createdByUserID                                                              String?
+  updatedByUserID                                                              String?
+  approvedByUserID                                                             String?
+  restaurant_issues                                                            restaurant_issues[]
+  restaurant_recquisition_items                                                restaurant_recquisition_items[]
+  restaurant_users_restaurant_recquisitions_approvedByUserIDTorestaurant_users restaurant_users?               @relation("restaurant_recquisitions_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_restaurant_recquisitions_createdByUserIDTorestaurant_users  restaurant_users?               @relation("restaurant_recquisitions_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_users_restaurant_recquisitions_updatedByUserIDTorestaurant_users  restaurant_users?               @relation("restaurant_recquisitions_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+}
+
+model restaurant_roles {
+  id                     String                   @id
+  roleName               String                   @unique
+  slug                   String                   @unique
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  enabled                Boolean                  @default(true)
+  restaurant_users       restaurant_users[]
+  restaurant_permissions restaurant_permissions[] @relation("restaurant_permissionsTorestaurant_roles")
+}
+
+model restaurant_users {
+  id                                                                                               String                            @id
+  restaurantID                                                                                     String?
+  firstName                                                                                        String
+  lastName                                                                                         String?
+  email                                                                                            String                            @unique
+  phoneNumber                                                                                      String                            @unique
+  addressLine1                                                                                     String?
+  addressLine2                                                                                     String?
+  city                                                                                             String?
+  state                                                                                            String?
+  country                                                                                          String?
+  zipCode                                                                                          Int?
+  countryCode                                                                                      String?
+  gender                                                                                           String?
+  dateOfBirth                                                                                      DateTime?
+  userName                                                                                         String                            @unique
+  password                                                                                         String
+  restaurant_rolesId                                                                               String
+  createdAt                                                                                        DateTime                          @default(now())
+  updatedAt                                                                                        DateTime
+  enabled                                                                                          Boolean                           @default(true)
+  createdBy                                                                                        String?
+  updatedBy                                                                                        String?
+  userType                                                                                         String                            @default("restaurant")
+  document_uploads_tracking_table                                                                  document_uploads_tracking_table[]
+  gas_readings_gas_readings_approvedByUserIDTorestaurant_users                                     gas_readings[]                    @relation("gas_readings_approvedByUserIDTorestaurant_users")
+  gas_readings_gas_readings_createdByUserIDTorestaurant_users                                      gas_readings[]                    @relation("gas_readings_createdByUserIDTorestaurant_users")
+  gas_readings_gas_readings_restaurantUserIDTorestaurant_users                                     gas_readings[]                    @relation("gas_readings_restaurantUserIDTorestaurant_users")
+  gas_readings_gas_readings_updatedByUserIDTorestaurant_users                                      gas_readings[]                    @relation("gas_readings_updatedByUserIDTorestaurant_users")
+  non_cahrgable_items_non_cahrgable_items_approvedByUserIDTorestaurant_users                       non_cahrgable_items[]             @relation("non_cahrgable_items_approvedByUserIDTorestaurant_users")
+  non_cahrgable_items_non_cahrgable_items_createdByUserIDTorestaurant_users                        non_cahrgable_items[]             @relation("non_cahrgable_items_createdByUserIDTorestaurant_users")
+  non_cahrgable_items_non_cahrgable_items_restaurantUserIDTorestaurant_users                       non_cahrgable_items?              @relation("non_cahrgable_items_restaurantUserIDTorestaurant_users")
+  non_cahrgable_items_non_cahrgable_items_updatedByUserIDTorestaurant_users                        non_cahrgable_items[]             @relation("non_cahrgable_items_updatedByUserIDTorestaurant_users")
+  non_chargable_category_non_chargable_category_approvedByUserIDTorestaurant_users                 non_chargable_category[]          @relation("non_chargable_category_approvedByUserIDTorestaurant_users")
+  non_chargable_category_non_chargable_category_createdByUserIDTorestaurant_users                  non_chargable_category[]          @relation("non_chargable_category_createdByUserIDTorestaurant_users")
+  non_chargable_category_non_chargable_category_updatedByUserIDTorestaurant_users                  non_chargable_category[]          @relation("non_chargable_category_updatedByUserIDTorestaurant_users")
+  non_chargeable_sale_categories_non_chargeable_sale_categories_approvedByUserIDTorestaurant_users non_chargeable_sale_categories[]  @relation("non_chargeable_sale_categories_approvedByUserIDTorestaurant_users")
+  non_chargeable_sale_categories_non_chargeable_sale_categories_createdByUserIDTorestaurant_users  non_chargeable_sale_categories[]  @relation("non_chargeable_sale_categories_createdByUserIDTorestaurant_users")
+  non_chargeable_sale_categories_non_chargeable_sale_categories_updatedByUserIDTorestaurant_users  non_chargeable_sale_categories[]  @relation("non_chargeable_sale_categories_updatedByUserIDTorestaurant_users")
+  non_chargeable_sales_non_chargeable_sales_approvedByUserIDTorestaurant_users                     non_chargeable_sales[]            @relation("non_chargeable_sales_approvedByUserIDTorestaurant_users")
+  non_chargeable_sales_non_chargeable_sales_createdByUserIDTorestaurant_users                      non_chargeable_sales[]            @relation("non_chargeable_sales_createdByUserIDTorestaurant_users")
+  non_chargeable_sales_non_chargeable_sales_updatedByUserIDTorestaurant_users                      non_chargeable_sales[]            @relation("non_chargeable_sales_updatedByUserIDTorestaurant_users")
+  non_chargeable_sales_entries_non_chargeable_sales_entries_approvedByUserIDTorestaurant_users     non_chargeable_sales_entries[]    @relation("non_chargeable_sales_entries_approvedByUserIDTorestaurant_users")
+  non_chargeable_sales_entries_non_chargeable_sales_entries_createdByUserIDTorestaurant_users      non_chargeable_sales_entries[]    @relation("non_chargeable_sales_entries_createdByUserIDTorestaurant_users")
+  non_chargeable_sales_entries_non_chargeable_sales_entries_updatedByUserIDTorestaurant_users      non_chargeable_sales_entries[]    @relation("non_chargeable_sales_entries_updatedByUserIDTorestaurant_users")
+  restaurant_restaurant_chefIDTorestaurant_users                                                   restaurant[]                      @relation("restaurant_chefIDTorestaurant_users")
+  restaurant_restaurant_storeIDTorestaurant_users                                                  restaurant[]                      @relation("restaurant_storeIDTorestaurant_users")
+  restaurant_SKU_category_restaurant_SKU_category_approvedByUserIDTorestaurant_users               restaurant_SKU_category[]         @relation("restaurant_SKU_category_approvedByUserIDTorestaurant_users")
+  restaurant_SKU_category_restaurant_SKU_category_createdByUserIDTorestaurant_users                restaurant_SKU_category[]         @relation("restaurant_SKU_category_createdByUserIDTorestaurant_users")
+  restaurant_SKU_category_restaurant_SKU_category_updatedByUserIDTorestaurant_users                restaurant_SKU_category[]         @relation("restaurant_SKU_category_updatedByUserIDTorestaurant_users")
+  restaurant_SKU_groups_restaurant_SKU_groups_approvedByUserIDTorestaurant_users                   restaurant_SKU_groups[]           @relation("restaurant_SKU_groups_approvedByUserIDTorestaurant_users")
+  restaurant_SKU_groups_restaurant_SKU_groups_createdByUserIDTorestaurant_users                    restaurant_SKU_groups[]           @relation("restaurant_SKU_groups_createdByUserIDTorestaurant_users")
+  restaurant_SKU_groups_restaurant_SKU_groups_updatedByUserIDTorestaurant_users                    restaurant_SKU_groups[]           @relation("restaurant_SKU_groups_updatedByUserIDTorestaurant_users")
+  restaurant_SKU_item_variants_restaurant_SKU_item_variants_approvedByUserIDTorestaurant_users     restaurant_SKU_item_variants[]    @relation("restaurant_SKU_item_variants_approvedByUserIDTorestaurant_users")
+  restaurant_SKU_item_variants_restaurant_SKU_item_variants_createdByUserIDTorestaurant_users      restaurant_SKU_item_variants[]    @relation("restaurant_SKU_item_variants_createdByUserIDTorestaurant_users")
+  restaurant_SKU_item_variants_restaurant_SKU_item_variants_updatedByUserIDTorestaurant_users      restaurant_SKU_item_variants[]    @relation("restaurant_SKU_item_variants_updatedByUserIDTorestaurant_users")
+  restaurant_SKU_items_restaurant_SKU_items_approvedByUserIDTorestaurant_users                     restaurant_SKU_items[]            @relation("restaurant_SKU_items_approvedByUserIDTorestaurant_users")
+  restaurant_SKU_items_restaurant_SKU_items_createdByUserIDTorestaurant_users                      restaurant_SKU_items[]            @relation("restaurant_SKU_items_createdByUserIDTorestaurant_users")
+  restaurant_SKU_items_restaurant_SKU_items_updatedByUserIDTorestaurant_users                      restaurant_SKU_items[]            @relation("restaurant_SKU_items_updatedByUserIDTorestaurant_users")
+  restaurant_expense_category_restaurant_expense_category_approvedByUserIDTorestaurant_users       restaurant_expense_category[]     @relation("restaurant_expense_category_approvedByUserIDTorestaurant_users")
+  restaurant_expense_category_restaurant_expense_category_createdByUserIDTorestaurant_users        restaurant_expense_category[]     @relation("restaurant_expense_category_createdByUserIDTorestaurant_users")
+  restaurant_expense_category_restaurant_expense_category_updatedByUserIDTorestaurant_users        restaurant_expense_category[]     @relation("restaurant_expense_category_updatedByUserIDTorestaurant_users")
+  restaurant_expenses_restaurant_expenses_approvedByUserIDTorestaurant_users                       restaurant_expenses[]             @relation("restaurant_expenses_approvedByUserIDTorestaurant_users")
+  restaurant_expenses_restaurant_expenses_createdByUserIDTorestaurant_users                        restaurant_expenses[]             @relation("restaurant_expenses_createdByUserIDTorestaurant_users")
+  restaurant_expenses_restaurant_expenses_updatedByUserIDTorestaurant_users                        restaurant_expenses[]             @relation("restaurant_expenses_updatedByUserIDTorestaurant_users")
+  restaurant_issues_restaurant_issues_approvedByUserIDTorestaurant_users                           restaurant_issues[]               @relation("restaurant_issues_approvedByUserIDTorestaurant_users")
+  restaurant_issues_restaurant_issues_createdByUserIDTorestaurant_users                            restaurant_issues[]               @relation("restaurant_issues_createdByUserIDTorestaurant_users")
+  restaurant_issues_restaurant_issues_updatedByUserIDTorestaurant_users                            restaurant_issues[]               @relation("restaurant_issues_updatedByUserIDTorestaurant_users")
+  restaurant_recquisitions_restaurant_recquisitions_approvedByUserIDTorestaurant_users             restaurant_recquisitions[]        @relation("restaurant_recquisitions_approvedByUserIDTorestaurant_users")
+  restaurant_recquisitions_restaurant_recquisitions_createdByUserIDTorestaurant_users              restaurant_recquisitions[]        @relation("restaurant_recquisitions_createdByUserIDTorestaurant_users")
+  restaurant_recquisitions_restaurant_recquisitions_updatedByUserIDTorestaurant_users              restaurant_recquisitions[]        @relation("restaurant_recquisitions_updatedByUserIDTorestaurant_users")
+  restaurant_restaurant_users_restaurantIDTorestaurant                                             restaurant?                       @relation("restaurant_users_restaurantIDTorestaurant", fields: [restaurantID], references: [id])
+  restaurant_roles                                                                                 restaurant_roles                  @relation(fields: [restaurant_rolesId], references: [id])
+  store_SKU_category_store_SKU_category_approvedByUserIDTorestaurant_users                         store_SKU_category[]              @relation("store_SKU_category_approvedByUserIDTorestaurant_users")
+  store_SKU_category_store_SKU_category_createdByUserIDTorestaurant_users                          store_SKU_category[]              @relation("store_SKU_category_createdByUserIDTorestaurant_users")
+  store_SKU_category_store_SKU_category_updatedByUserIDTorestaurant_users                          store_SKU_category[]              @relation("store_SKU_category_updatedByUserIDTorestaurant_users")
+  store_SKU_item_variants_store_SKU_item_variants_approvedByUserIDTorestaurant_users               store_SKU_item_variants[]         @relation("store_SKU_item_variants_approvedByUserIDTorestaurant_users")
+  store_SKU_item_variants_store_SKU_item_variants_createdByUserIDTorestaurant_users                store_SKU_item_variants[]         @relation("store_SKU_item_variants_createdByUserIDTorestaurant_users")
+  store_SKU_item_variants_store_SKU_item_variants_updatedByUserIDTorestaurant_users                store_SKU_item_variants[]         @relation("store_SKU_item_variants_updatedByUserIDTorestaurant_users")
+  store_SKU_items_store_SKU_items_approvedByUserIDTorestaurant_users                               store_SKU_items[]                 @relation("store_SKU_items_approvedByUserIDTorestaurant_users")
+  store_SKU_items_store_SKU_items_createdByUserIDTorestaurant_users                                store_SKU_items[]                 @relation("store_SKU_items_createdByUserIDTorestaurant_users")
+  store_SKU_items_store_SKU_items_updatedByUserIDTorestaurant_users                                store_SKU_items[]                 @relation("store_SKU_items_updatedByUserIDTorestaurant_users")
+  store_SKU_sections_store_SKU_sections_approvedByUserIDTorestaurant_users                         store_SKU_sections[]              @relation("store_SKU_sections_approvedByUserIDTorestaurant_users")
+  store_SKU_sections_store_SKU_sections_createdByUserIDTorestaurant_users                          store_SKU_sections[]              @relation("store_SKU_sections_createdByUserIDTorestaurant_users")
+  store_SKU_sections_store_SKU_sections_updatedByUserIDTorestaurant_users                          store_SKU_sections[]              @relation("store_SKU_sections_updatedByUserIDTorestaurant_users")
+  store_inventory                                                                                  store_inventory[]
+  store_purchase                                                                                   store_purchase[]
+  vendor_categories_vendor_categories_approvedByUserIDTorestaurant_users                           vendor_categories[]               @relation("vendor_categories_approvedByUserIDTorestaurant_users")
+  vendor_categories_vendor_categories_createdByUserIDTorestaurant_users                            vendor_categories[]               @relation("vendor_categories_createdByUserIDTorestaurant_users")
+  vendor_categories_vendor_categories_updatedByUserIDTorestaurant_users                            vendor_categories[]               @relation("vendor_categories_updatedByUserIDTorestaurant_users")
+  vendors_vendors_approvedByUserIDTorestaurant_users                                               vendors[]                         @relation("vendors_approvedByUserIDTorestaurant_users")
+  vendors_vendors_createdByUserIDTorestaurant_users                                                vendors[]                         @relation("vendors_createdByUserIDTorestaurant_users")
+  vendors_vendors_updatedByUserIDTorestaurant_users                                                vendors[]                         @relation("vendors_updatedByUserIDTorestaurant_users")
+  waste_management_category_waste_management_category_approvedByUserIDTorestaurant_users           waste_management_category[]       @relation("waste_management_category_approvedByUserIDTorestaurant_users")
+  waste_management_category_waste_management_category_createdByUserIDTorestaurant_users            waste_management_category[]       @relation("waste_management_category_createdByUserIDTorestaurant_users")
+  waste_management_category_waste_management_category_updatedByUserIDTorestaurant_users            waste_management_category[]       @relation("waste_management_category_updatedByUserIDTorestaurant_users")
+  waste_management_items_waste_management_items_approvedByUserIDTorestaurant_users                 waste_management_items[]          @relation("waste_management_items_approvedByUserIDTorestaurant_users")
+  waste_management_items_waste_management_items_createdByUserIDTorestaurant_users                  waste_management_items[]          @relation("waste_management_items_createdByUserIDTorestaurant_users")
+  waste_management_items_waste_management_items_restaurantUserIDTorestaurant_users                 waste_management_items[]          @relation("waste_management_items_restaurantUserIDTorestaurant_users")
+  waste_management_items_waste_management_items_updatedByUserIDTorestaurant_users                  waste_management_items[]          @relation("waste_management_items_updatedByUserIDTorestaurant_users")
+}
+
+model store_SKU_category {
+  id                                                                     String               @id
+  SKUCategoryName                                                        String               @unique
+  isVeg                                                                  Boolean
+  approvalStatus                                                         Boolean              @default(false)
+  createdAt                                                              DateTime             @default(now())
+  updatedAt                                                              DateTime
+  enabled                                                                Boolean              @default(true)
+  createdByUserID                                                        String?
+  updatedByUserID                                                        String?
+  approvedByUserID                                                       String?
+  isPerishable                                                           Boolean
+  restaurant_users_store_SKU_category_approvedByUserIDTorestaurant_users restaurant_users?    @relation("store_SKU_category_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_store_SKU_category_createdByUserIDTorestaurant_users  restaurant_users?    @relation("store_SKU_category_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_users_store_SKU_category_updatedByUserIDTorestaurant_users  restaurant_users?    @relation("store_SKU_category_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+  store_SKU_sections                                                     store_SKU_sections[]
+}
+
+model store_SKU_item_variants {
+  id                                                                          String                                   @id
+  isNCItem                                                                    Boolean                                  @default(false)
+  SKUItemID                                                                   String
+  SKUItemVariantName                                                          String
+  SKUItemVariantQuantity                                                      Int
+  SKUItemVariantRate                                                          Int?
+  SKUItemVariantExpirationDate                                                DateTime?
+  approvalStatus                                                              Boolean                                  @default(false)
+  createdAt                                                                   DateTime                                 @default(now())
+  updatedAt                                                                   DateTime
+  enabled                                                                     Boolean                                  @default(true)
+  createdByUserID                                                             String?
+  updatedByUserID                                                             String?
+  approvedByUserID                                                            String?
+  non_chargeable_sales                                                        non_chargeable_sales[]
+  restaurant_recquisition_items                                               restaurant_recquisition_items[]
+  store_SKU_items                                                             store_SKU_items                          @relation(fields: [SKUItemID], references: [id])
+  restaurant_users_store_SKU_item_variants_approvedByUserIDTorestaurant_users restaurant_users?                        @relation("store_SKU_item_variants_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_store_SKU_item_variants_createdByUserIDTorestaurant_users  restaurant_users?                        @relation("store_SKU_item_variants_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_users_store_SKU_item_variants_updatedByUserIDTorestaurant_users  restaurant_users?                        @relation("store_SKU_item_variants_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+  store_SKU_item_variants_purchase_rates                                      store_SKU_item_variants_purchase_rates[]
+  store_inventory                                                             store_inventory?
+  store_purchase                                                              store_purchase[]
+  waste_management_items                                                      waste_management_items[]
+}
+
+model store_SKU_item_variants_purchase_rates {
+  id                      String                  @id
+  SKUItemVariantID        String
+  SKUItemVariantNewRate   Int
+  SKUItemVariantOldRate   Int?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime
+  remarks                 String?
+  vendorID                String
+  store_SKU_item_variants store_SKU_item_variants @relation(fields: [SKUItemVariantID], references: [id])
+  vendors                 vendors                 @relation(fields: [vendorID], references: [id])
+}
+
+model store_SKU_items {
+  id                                                                  String                    @id
+  SKUItemName                                                         String                    @unique
+  SKUItemMeasurementUnit                                              String
+  approvalStatus                                                      Boolean                   @default(false)
+  createdAt                                                           DateTime                  @default(now())
+  updatedAt                                                           DateTime
+  enabled                                                             Boolean                   @default(true)
+  createdByUserID                                                     String?
+  updatedByUserID                                                     String?
+  approvedByUserID                                                    String?
+  storeSKUSectionID                                                   String
+  store_SKU_item_variants                                             store_SKU_item_variants[]
+  restaurant_users_store_SKU_items_approvedByUserIDTorestaurant_users restaurant_users?         @relation("store_SKU_items_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_store_SKU_items_createdByUserIDTorestaurant_users  restaurant_users?         @relation("store_SKU_items_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  store_SKU_sections                                                  store_SKU_sections        @relation(fields: [storeSKUSectionID], references: [id])
+  restaurant_users_store_SKU_items_updatedByUserIDTorestaurant_users  restaurant_users?         @relation("store_SKU_items_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+}
+
+model store_SKU_sections {
+  id                                                                     String                    @id
+  storeSKUSectionName                                                    String                    @unique
+  storeSKUCategoryID                                                     String
+  approvalStatus                                                         Boolean                   @default(false)
+  createdAt                                                              DateTime                  @default(now())
+  updatedAt                                                              DateTime
+  enabled                                                                Boolean                   @default(true)
+  createdByUserID                                                        String?
+  updatedByUserID                                                        String?
+  approvedByUserID                                                       String?
+  restaurant_issued_items                                                restaurant_issued_items[]
+  store_SKU_items                                                        store_SKU_items[]
+  restaurant_users_store_SKU_sections_approvedByUserIDTorestaurant_users restaurant_users?         @relation("store_SKU_sections_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_store_SKU_sections_createdByUserIDTorestaurant_users  restaurant_users?         @relation("store_SKU_sections_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  store_SKU_category                                                     store_SKU_category        @relation(fields: [storeSKUCategoryID], references: [id])
+  restaurant_users_store_SKU_sections_updatedByUserIDTorestaurant_users  restaurant_users?         @relation("store_SKU_sections_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+}
+
+model store_inventory {
+  id                      String                    @id
+  restaurandUserID        String
+  storeInventoryQuantity  String
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  SKUItemVariantID        String                    @unique
+  restaurantId            String?
+  store_SKU_item_variants store_SKU_item_variants   @relation(fields: [SKUItemVariantID], references: [id])
+  restaurant_users        restaurant_users          @relation(fields: [restaurandUserID], references: [id])
+  restaurant              restaurant?               @relation(fields: [restaurantId], references: [id])
+  store_inventory_details store_inventory_details[]
+}
+
+model store_inventory_details {
+  id                String          @id
+  storeInventoryId  String
+  date              DateTime
+  openingQuantity   Int
+  purchasedQuantity Int
+  issuedQuantity    Int
+  wastedQuantity    Int
+  closingQuantity   Int
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime
+  store_inventory   store_inventory @relation(fields: [storeInventoryId], references: [id])
+}
+
+model store_purchase {
+  id                      String                    @id
+  restaurandID            String?
+  vendorID                String
+  storeSKUItemVariantsID  String
+  storePurcuaseRate       Int
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  restaurantUserID        String?
+  availableStock          Int?
+  monthIndex              Int
+  totalIssues             Int?
+  totalPurchases          Int?
+  year                    Int
+  openingQuantity         Int                       @default(0)
+  storePurchaseAmount     Int
+  storePurchaseQuantity   Int
+  restaurant_issued_items restaurant_issued_items[]
+  restaurant_users        restaurant_users?         @relation(fields: [restaurantUserID], references: [id])
+  store_SKU_item_variants store_SKU_item_variants   @relation(fields: [storeSKUItemVariantsID], references: [id])
+  vendors                 vendors                   @relation(fields: [vendorID], references: [id])
+  store_purchase_entries  store_purchase_entries[]
+}
+
+model store_purchase_entries {
+  id                    String         @id
+  purchaseId            String
+  purchaseDate          String
+  storePurchaseQuantity Int
+  storePurchaseAmount   Int?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime
+  store_purchase        store_purchase @relation(fields: [purchaseId], references: [id])
+}
+
+model swiggy {
+  id                              String                           @id
+  documentUploadTrackingTableID   String?
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime
+  area                            String?
+  date                            String
+  invoiceNo                       String
+  name                            String?
+  orderCancelReason               String?
+  status                          String?
+  orderType                       String?
+  document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+}
+
+model temporary_item_report_with_customer_order {
+  id                              String                           @id
+  documentUploadTrackingTableID   String?
+  invoiceNo                       String
+  itemName                        String
+  price                           Int
+  qty                             Int
+  subTotal                        Int
+  discount                        Int                              @default(0)
+  tax                             Int                              @default(0)
+  finalTotal                      Int
+  tableNo                         Int?
+  serverName                      String?
+  covers                          String?
+  variation                       String?
+  category                        String
+  nonTaxable                      Int                              @default(0)
+  cgstRate                        Int                              @default(0)
+  cgstAmount                      Int                              @default(0)
+  sgstRate                        Int                              @default(0)
+  sgstAmount                      Int                              @default(0)
+  vatRate                         Int                              @default(0)
+  vatAmount                       Int                              @default(0)
+  restaurantSKUItemVairantID      String?
+  restaurantSKUCategoryID         String?
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime
+  orderType                       String?
+  document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+  restaurant_SKU_category         restaurant_SKU_category?         @relation(fields: [restaurantSKUCategoryID], references: [id])
+  restaurant_SKU_item_variants    restaurant_SKU_item_variants?    @relation(fields: [restaurantSKUItemVairantID], references: [id])
+}
+
+model temporary_order_master {
+  id                              String                           @id
+  documentUploadTrackingTableID   String?
+  date                            String
+  biller                          String?
+  paymentType                     String?
+  orderType                       String?
+  status                          String?
+  area                            String?
+  subOrderType                    String?
+  groupName                       String?
+  GSTIN                           String?
+  orderCancelReason               String?
+  myAmount                        Int                              @default(0)
+  discount                        Int                              @default(0)
+  netSales                        Int                              @default(0)
+  deliveryCharge                  Int                              @default(0)
+  containerCharge                 Int                              @default(0)
+  serviceCharge                   Int                              @default(0)
+  totalTax                        Int                              @default(0)
+  roundOff                        Int                              @default(0)
+  waivedOff                       Int                              @default(0)
+  total                           Int                              @default(0)
+  onlineTaxCalculated             Int                              @default(0)
+  gstPaidByMerchant               Int                              @default(0)
+  gstPaidByEcommerce              Int                              @default(0)
+  tip                             Int                              @default(0)
+  nonTaxable                      Int                              @default(0)
+  cgstAmount                      Int                              @default(0)
+  cgst                            Int                              @default(0)
+  sgstAmount                      Int                              @default(0)
+  sgst                            Int                              @default(0)
+  vatAmount                       Int                              @default(0)
+  vat                             Int                              @default(0)
+  itemModifiedDate                String?
+  modifiedByUser                  String?
+  oldValue                        Int?
+  newValue                        Int?
+  itemModificationStatus          String?
+  whenModified                    String?
+  modificationReason              String?
+  changeLog                       String?
+  cash                            Int?                             @default(0)
+  card                            Int?                             @default(0)
+  duePayment                      Int?                             @default(0)
+  other                           Int?                             @default(0)
+  wallet                          Int?                             @default(0)
+  online                          Int?
+  discountCouponID                String?
+  discountType                    String?
+  discountReason                  String?
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime
+  invoiceNo                       String                           @unique
+  discount_coupons                discount_coupons?                @relation(fields: [discountCouponID], references: [id])
+  document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+}
+
+model unit_expenses_tally_data {
+  id                              String                           @id
+  documentUploadTrackingTableID   String?
+  restaurantID                    String?
+  expenseCategoryID               String
+  expenseVendor                   String
+  expenseParticularDescription    String?
+  expenseAmount                   Int                              @default(0)
+  expenseDate                     String
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime
+  expenseType                     String
+  document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+  expense_tally_data_categories   expense_tally_data_categories    @relation(fields: [expenseCategoryID], references: [id])
+  restaurant                      restaurant?                      @relation(fields: [restaurantID], references: [id])
+}
+
+model vendor_categories {
+  id                                                                    String            @id
+  vendorCategoryName                                                    String            @unique
+  approvalStatus                                                        Boolean           @default(false)
+  createdAt                                                             DateTime          @default(now())
+  updatedAt                                                             DateTime
+  enabled                                                               Boolean           @default(true)
+  createdByUserID                                                       String?
+  updatedByUserID                                                       String?
+  approvedByUserID                                                      String?
+  restaurant_users_vendor_categories_approvedByUserIDTorestaurant_users restaurant_users? @relation("vendor_categories_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id], onDelete: Cascade)
+  restaurant_users_vendor_categories_createdByUserIDTorestaurant_users  restaurant_users? @relation("vendor_categories_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id], onDelete: Cascade)
+  restaurant_users_vendor_categories_updatedByUserIDTorestaurant_users  restaurant_users? @relation("vendor_categories_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id], onDelete: Cascade)
+  vendors                                                               vendors[]
+}
+
+model vendors {
+  id                                                          String                                   @id
+  vendorName                                                  String                                   @unique
+  addressLine1                                                String
+  addressLine2                                                String?
+  city                                                        String
+  state                                                       String
+  country                                                     String
+  zipCode                                                     Int
+  vendorCatgeoryID                                            String
+  createdByUserID                                             String?
+  updatedByUserID                                             String?
+  approvedByUserID                                            String?
+  restaurantID                                                String
+  approvalStatus                                              Boolean                                  @default(false)
+  createdAt                                                   DateTime                                 @default(now())
+  updatedAt                                                   DateTime
+  enabled                                                     Boolean                                  @default(true)
+  store_SKU_item_variants_purchase_rates                      store_SKU_item_variants_purchase_rates[]
+  store_purchase                                              store_purchase[]
+  restaurant_users_vendors_approvedByUserIDTorestaurant_users restaurant_users?                        @relation("vendors_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_vendors_createdByUserIDTorestaurant_users  restaurant_users?                        @relation("vendors_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant                                                  restaurant                               @relation(fields: [restaurantID], references: [id])
+  restaurant_users_vendors_updatedByUserIDTorestaurant_users  restaurant_users?                        @relation("vendors_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+  vendor_categories                                           vendor_categories                        @relation(fields: [vendorCatgeoryID], references: [id])
+}
+
+model waste_management_category {
+  id                                                                            String            @id
+  wasteManagementCategoryName                                                   String            @unique
+  approvalStatus                                                                Boolean           @default(false)
+  createdAt                                                                     DateTime          @default(now())
+  updatedAt                                                                     DateTime
+  enabled                                                                       Boolean           @default(true)
+  createdByUserID                                                               String?
+  updatedByUserID                                                               String?
+  approvedByUserID                                                              String?
+  restaurant_users_waste_management_category_approvedByUserIDTorestaurant_users restaurant_users? @relation("waste_management_category_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_waste_management_category_createdByUserIDTorestaurant_users  restaurant_users? @relation("waste_management_category_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_users_waste_management_category_updatedByUserIDTorestaurant_users  restaurant_users? @relation("waste_management_category_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+}
+
+model waste_management_items {
+  id                                                                         String                        @id
+  restaurantUserID                                                           String
+  storeSKUItemVariantID                                                      String?
+  restaurantSKUItemVariantID                                                 String?
+  wastedItemQuantity                                                         Int
+  approvalStatus                                                             Boolean                       @default(false)
+  createdAt                                                                  DateTime                      @default(now())
+  updatedAt                                                                  DateTime
+  createdByUserID                                                            String?
+  updatedByUserID                                                            String?
+  approvedByUserID                                                           String?
+  restaurant_users_waste_management_items_approvedByUserIDTorestaurant_users restaurant_users?             @relation("waste_management_items_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_waste_management_items_createdByUserIDTorestaurant_users  restaurant_users?             @relation("waste_management_items_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_SKU_item_variants                                               restaurant_SKU_item_variants? @relation(fields: [restaurantSKUItemVariantID], references: [id])
+  restaurant_users_waste_management_items_restaurantUserIDTorestaurant_users restaurant_users              @relation("waste_management_items_restaurantUserIDTorestaurant_users", fields: [restaurantUserID], references: [id])
+  store_SKU_item_variants                                                    store_SKU_item_variants?      @relation(fields: [storeSKUItemVariantID], references: [id])
+  restaurant_users_waste_management_items_updatedByUserIDTorestaurant_users  restaurant_users?             @relation("waste_management_items_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+}
+
+model zomato {
+  id                              String                           @id
+  documentUploadTrackingTableID   String?
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime
+  area                            String?
+  date                            String
+  invoiceNo                       String
+  name                            String?
+  orderCancelReason               String?
+  status                          String?
+  orderType                       String?
+  document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+}
+
+enum Category {
+  foodtrial
+  spoilage
+}
+
+enum DocumentCategory {
+  petpooja
+  expense
+  hr
+}
+
+enum ExpenseCategoryEnums {
+  cam_charges
+  electricity_charges
+  rent
+  rent_revenue_share
+  store_rent
+  water_charges
+  daily_incentives
+  employer_contribution_EPF
+  employer_contribution_ESIC
+  food_deduction
+  medical_expenses
+  salary_and_wages
+  service_and_incentives_expenses
+  staff_welfare_expenses
+  house_keeping_expenses_others
+  kitchen_consumables
+  crockery_and_cutlery
+  laundry_expenses
+  other_consumables
+  printing_and_stationary
+  repair_and_maintainance
+  repair_and_maintainance_material
+  consultancy_fee
+  nereby_commission_expenses
+  professional_fees
+  tp_fees_on_liquor
+  yes_bank_comission_expenses
+  food_testing_charges
+  member_ship_fee
+  miscellaneous_expenses
+  conveyance_and_travelling
+  bank_charges
+  business_promotions
+  donation_expenses
+  freight_and_cartage_expenses
+  local_conveyance_expenses
+  pest_control_charges
+  postage_and_telegram
+  telephone_and_internet_expenses
+  paytm_comission_expenses
+  harjit_kaur_banga_salary
+  jasmeet_singh_banga_salary
+  salary_expenses_promotions
+  corporate_general_expenses
+}
+
+enum ExpenseVendorEnum {
+  cash
+  others
+}
+
+enum OrderSourceEnum {
+  zomato
+  swiggy
+}
+
+enum OrderTypeEnum {
+  dine_in
+  delivery
+  pickup
+}
