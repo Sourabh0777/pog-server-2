@@ -30,9 +30,9 @@ model FoodTrialSpoilage {
 }
 
 model Order {
-  id                     Int         @id @default(autoincrement())
+  id                     Int         @id @unique @default(autoincrement())
   restaurantID           Int
-  invoiceID              Int
+  invoiceID              Int         @unique
   paymentTypeID          Int
   orderTypeID            Int
   paymentStatus          String
@@ -54,20 +54,19 @@ model Order {
 }
 
 model OrderItem {
-  id               Int      @id @default(autoincrement())
-  orderID          Int
-  itemID           Int
-  quantity         Int?
-  priceAmount      Float?
-  discountAmount   Float?
-  CGST             Float?
-  SGST             Float?
-  VAT              Float?
-  totalAmount      Float
-  packagingCharges Float?
-  createdAt        DateTime @default(now())
-  NCFlag           Boolean
-  Order            Order    @relation(fields: [orderID], references: [id])
+  id                       Int                       @id @unique @default(autoincrement())
+  orderID                  Int
+  quantity                 Int?
+  createdAt                DateTime                  @default(now())
+  NCFlag                   Boolean                   @default(false)
+  item_id                  BigInt?
+  original_price           Float?
+  price                    Float?
+  total                    Float?
+  total_discount           Float?                    @default(0)
+  total_tax                Float?
+  restaurant_new_SKU_items restaurant_new_SKU_items? @relation(fields: [item_id], references: [item_id])
+  Order                    Order                     @relation(fields: [orderID], references: [id])
 }
 
 model admin_permissions {
@@ -282,17 +281,18 @@ model non_chargable_category {
 }
 
 model non_chargeable_sale_categories {
-  id                                                                                 String                 @id
+  id                                                                                 String                    @id
   createdByUserID                                                                    String?
   updatedByUserID                                                                    String?
   approvedByUserID                                                                   String?
-  createdAt                                                                          DateTime               @default(now())
+  createdAt                                                                          DateTime                  @default(now())
   updatedAt                                                                          DateTime
   nonChargeableSaleCategoryName                                                      String
-  restaurant_users_non_chargeable_sale_categories_approvedByUserIDTorestaurant_users restaurant_users?      @relation("non_chargeable_sale_categories_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id], onDelete: Cascade)
-  restaurant_users_non_chargeable_sale_categories_createdByUserIDTorestaurant_users  restaurant_users?      @relation("non_chargeable_sale_categories_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id], onDelete: Cascade)
-  restaurant_users_non_chargeable_sale_categories_updatedByUserIDTorestaurant_users  restaurant_users?      @relation("non_chargeable_sale_categories_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id], onDelete: Cascade)
+  restaurant_users_non_chargeable_sale_categories_approvedByUserIDTorestaurant_users restaurant_users?         @relation("non_chargeable_sale_categories_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id], onDelete: Cascade)
+  restaurant_users_non_chargeable_sale_categories_createdByUserIDTorestaurant_users  restaurant_users?         @relation("non_chargeable_sale_categories_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id], onDelete: Cascade)
+  restaurant_users_non_chargeable_sale_categories_updatedByUserIDTorestaurant_users  restaurant_users?         @relation("non_chargeable_sale_categories_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id], onDelete: Cascade)
   non_chargeable_sales                                                               non_chargeable_sales[]
+  non_chargeable_sales_v2                                                            non_chargeable_sales_v2[]
 }
 
 model non_chargeable_sales {
@@ -730,106 +730,112 @@ model restaurant_roles {
 }
 
 model restaurant_users {
-  id                                                                                               String                            @id
-  restaurantID                                                                                     String?
-  firstName                                                                                        String
-  lastName                                                                                         String?
-  email                                                                                            String                            @unique
-  phoneNumber                                                                                      String                            @unique
-  addressLine1                                                                                     String?
-  addressLine2                                                                                     String?
-  city                                                                                             String?
-  state                                                                                            String?
-  country                                                                                          String?
-  zipCode                                                                                          Int?
-  countryCode                                                                                      String?
-  gender                                                                                           String?
-  dateOfBirth                                                                                      DateTime?
-  userName                                                                                         String                            @unique
-  password                                                                                         String
-  restaurant_rolesId                                                                               String
-  createdAt                                                                                        DateTime                          @default(now())
-  updatedAt                                                                                        DateTime
-  enabled                                                                                          Boolean                           @default(true)
-  createdBy                                                                                        String?
-  updatedBy                                                                                        String?
-  userType                                                                                         String                            @default("restaurant")
-  document_uploads_tracking_table                                                                  document_uploads_tracking_table[]
-  gas_readings_gas_readings_approvedByUserIDTorestaurant_users                                     gas_readings[]                    @relation("gas_readings_approvedByUserIDTorestaurant_users")
-  gas_readings_gas_readings_createdByUserIDTorestaurant_users                                      gas_readings[]                    @relation("gas_readings_createdByUserIDTorestaurant_users")
-  gas_readings_gas_readings_restaurantUserIDTorestaurant_users                                     gas_readings[]                    @relation("gas_readings_restaurantUserIDTorestaurant_users")
-  gas_readings_gas_readings_updatedByUserIDTorestaurant_users                                      gas_readings[]                    @relation("gas_readings_updatedByUserIDTorestaurant_users")
-  non_cahrgable_items_non_cahrgable_items_approvedByUserIDTorestaurant_users                       non_cahrgable_items[]             @relation("non_cahrgable_items_approvedByUserIDTorestaurant_users")
-  non_cahrgable_items_non_cahrgable_items_createdByUserIDTorestaurant_users                        non_cahrgable_items[]             @relation("non_cahrgable_items_createdByUserIDTorestaurant_users")
-  non_cahrgable_items_non_cahrgable_items_restaurantUserIDTorestaurant_users                       non_cahrgable_items?              @relation("non_cahrgable_items_restaurantUserIDTorestaurant_users")
-  non_cahrgable_items_non_cahrgable_items_updatedByUserIDTorestaurant_users                        non_cahrgable_items[]             @relation("non_cahrgable_items_updatedByUserIDTorestaurant_users")
-  non_chargable_category_non_chargable_category_approvedByUserIDTorestaurant_users                 non_chargable_category[]          @relation("non_chargable_category_approvedByUserIDTorestaurant_users")
-  non_chargable_category_non_chargable_category_createdByUserIDTorestaurant_users                  non_chargable_category[]          @relation("non_chargable_category_createdByUserIDTorestaurant_users")
-  non_chargable_category_non_chargable_category_updatedByUserIDTorestaurant_users                  non_chargable_category[]          @relation("non_chargable_category_updatedByUserIDTorestaurant_users")
-  non_chargeable_sale_categories_non_chargeable_sale_categories_approvedByUserIDTorestaurant_users non_chargeable_sale_categories[]  @relation("non_chargeable_sale_categories_approvedByUserIDTorestaurant_users")
-  non_chargeable_sale_categories_non_chargeable_sale_categories_createdByUserIDTorestaurant_users  non_chargeable_sale_categories[]  @relation("non_chargeable_sale_categories_createdByUserIDTorestaurant_users")
-  non_chargeable_sale_categories_non_chargeable_sale_categories_updatedByUserIDTorestaurant_users  non_chargeable_sale_categories[]  @relation("non_chargeable_sale_categories_updatedByUserIDTorestaurant_users")
-  non_chargeable_sales_non_chargeable_sales_approvedByUserIDTorestaurant_users                     non_chargeable_sales[]            @relation("non_chargeable_sales_approvedByUserIDTorestaurant_users")
-  non_chargeable_sales_non_chargeable_sales_createdByUserIDTorestaurant_users                      non_chargeable_sales[]            @relation("non_chargeable_sales_createdByUserIDTorestaurant_users")
-  non_chargeable_sales_non_chargeable_sales_updatedByUserIDTorestaurant_users                      non_chargeable_sales[]            @relation("non_chargeable_sales_updatedByUserIDTorestaurant_users")
-  non_chargeable_sales_entries_non_chargeable_sales_entries_approvedByUserIDTorestaurant_users     non_chargeable_sales_entries[]    @relation("non_chargeable_sales_entries_approvedByUserIDTorestaurant_users")
-  non_chargeable_sales_entries_non_chargeable_sales_entries_createdByUserIDTorestaurant_users      non_chargeable_sales_entries[]    @relation("non_chargeable_sales_entries_createdByUserIDTorestaurant_users")
-  non_chargeable_sales_entries_non_chargeable_sales_entries_updatedByUserIDTorestaurant_users      non_chargeable_sales_entries[]    @relation("non_chargeable_sales_entries_updatedByUserIDTorestaurant_users")
-  restaurant_restaurant_chefIDTorestaurant_users                                                   restaurant[]                      @relation("restaurant_chefIDTorestaurant_users")
-  restaurant_restaurant_storeIDTorestaurant_users                                                  restaurant[]                      @relation("restaurant_storeIDTorestaurant_users")
-  restaurant_SKU_category_restaurant_SKU_category_approvedByUserIDTorestaurant_users               restaurant_SKU_category[]         @relation("restaurant_SKU_category_approvedByUserIDTorestaurant_users")
-  restaurant_SKU_category_restaurant_SKU_category_createdByUserIDTorestaurant_users                restaurant_SKU_category[]         @relation("restaurant_SKU_category_createdByUserIDTorestaurant_users")
-  restaurant_SKU_category_restaurant_SKU_category_updatedByUserIDTorestaurant_users                restaurant_SKU_category[]         @relation("restaurant_SKU_category_updatedByUserIDTorestaurant_users")
-  restaurant_SKU_groups_restaurant_SKU_groups_approvedByUserIDTorestaurant_users                   restaurant_SKU_groups[]           @relation("restaurant_SKU_groups_approvedByUserIDTorestaurant_users")
-  restaurant_SKU_groups_restaurant_SKU_groups_createdByUserIDTorestaurant_users                    restaurant_SKU_groups[]           @relation("restaurant_SKU_groups_createdByUserIDTorestaurant_users")
-  restaurant_SKU_groups_restaurant_SKU_groups_updatedByUserIDTorestaurant_users                    restaurant_SKU_groups[]           @relation("restaurant_SKU_groups_updatedByUserIDTorestaurant_users")
-  restaurant_SKU_item_variants_restaurant_SKU_item_variants_approvedByUserIDTorestaurant_users     restaurant_SKU_item_variants[]    @relation("restaurant_SKU_item_variants_approvedByUserIDTorestaurant_users")
-  restaurant_SKU_item_variants_restaurant_SKU_item_variants_createdByUserIDTorestaurant_users      restaurant_SKU_item_variants[]    @relation("restaurant_SKU_item_variants_createdByUserIDTorestaurant_users")
-  restaurant_SKU_item_variants_restaurant_SKU_item_variants_updatedByUserIDTorestaurant_users      restaurant_SKU_item_variants[]    @relation("restaurant_SKU_item_variants_updatedByUserIDTorestaurant_users")
-  restaurant_SKU_items_restaurant_SKU_items_approvedByUserIDTorestaurant_users                     restaurant_SKU_items[]            @relation("restaurant_SKU_items_approvedByUserIDTorestaurant_users")
-  restaurant_SKU_items_restaurant_SKU_items_createdByUserIDTorestaurant_users                      restaurant_SKU_items[]            @relation("restaurant_SKU_items_createdByUserIDTorestaurant_users")
-  restaurant_SKU_items_restaurant_SKU_items_updatedByUserIDTorestaurant_users                      restaurant_SKU_items[]            @relation("restaurant_SKU_items_updatedByUserIDTorestaurant_users")
-  restaurant_expense_category_restaurant_expense_category_approvedByUserIDTorestaurant_users       restaurant_expense_category[]     @relation("restaurant_expense_category_approvedByUserIDTorestaurant_users")
-  restaurant_expense_category_restaurant_expense_category_createdByUserIDTorestaurant_users        restaurant_expense_category[]     @relation("restaurant_expense_category_createdByUserIDTorestaurant_users")
-  restaurant_expense_category_restaurant_expense_category_updatedByUserIDTorestaurant_users        restaurant_expense_category[]     @relation("restaurant_expense_category_updatedByUserIDTorestaurant_users")
-  restaurant_expenses_restaurant_expenses_approvedByUserIDTorestaurant_users                       restaurant_expenses[]             @relation("restaurant_expenses_approvedByUserIDTorestaurant_users")
-  restaurant_expenses_restaurant_expenses_createdByUserIDTorestaurant_users                        restaurant_expenses[]             @relation("restaurant_expenses_createdByUserIDTorestaurant_users")
-  restaurant_expenses_restaurant_expenses_updatedByUserIDTorestaurant_users                        restaurant_expenses[]             @relation("restaurant_expenses_updatedByUserIDTorestaurant_users")
-  restaurant_issues_restaurant_issues_approvedByUserIDTorestaurant_users                           restaurant_issues[]               @relation("restaurant_issues_approvedByUserIDTorestaurant_users")
-  restaurant_issues_restaurant_issues_createdByUserIDTorestaurant_users                            restaurant_issues[]               @relation("restaurant_issues_createdByUserIDTorestaurant_users")
-  restaurant_issues_restaurant_issues_updatedByUserIDTorestaurant_users                            restaurant_issues[]               @relation("restaurant_issues_updatedByUserIDTorestaurant_users")
-  restaurant_recquisitions_restaurant_recquisitions_approvedByUserIDTorestaurant_users             restaurant_recquisitions[]        @relation("restaurant_recquisitions_approvedByUserIDTorestaurant_users")
-  restaurant_recquisitions_restaurant_recquisitions_createdByUserIDTorestaurant_users              restaurant_recquisitions[]        @relation("restaurant_recquisitions_createdByUserIDTorestaurant_users")
-  restaurant_recquisitions_restaurant_recquisitions_updatedByUserIDTorestaurant_users              restaurant_recquisitions[]        @relation("restaurant_recquisitions_updatedByUserIDTorestaurant_users")
-  restaurant_restaurant_users_restaurantIDTorestaurant                                             restaurant?                       @relation("restaurant_users_restaurantIDTorestaurant", fields: [restaurantID], references: [id])
-  restaurant_roles                                                                                 restaurant_roles                  @relation(fields: [restaurant_rolesId], references: [id])
-  store_SKU_category_store_SKU_category_approvedByUserIDTorestaurant_users                         store_SKU_category[]              @relation("store_SKU_category_approvedByUserIDTorestaurant_users")
-  store_SKU_category_store_SKU_category_createdByUserIDTorestaurant_users                          store_SKU_category[]              @relation("store_SKU_category_createdByUserIDTorestaurant_users")
-  store_SKU_category_store_SKU_category_updatedByUserIDTorestaurant_users                          store_SKU_category[]              @relation("store_SKU_category_updatedByUserIDTorestaurant_users")
-  store_SKU_item_variants_store_SKU_item_variants_approvedByUserIDTorestaurant_users               store_SKU_item_variants[]         @relation("store_SKU_item_variants_approvedByUserIDTorestaurant_users")
-  store_SKU_item_variants_store_SKU_item_variants_createdByUserIDTorestaurant_users                store_SKU_item_variants[]         @relation("store_SKU_item_variants_createdByUserIDTorestaurant_users")
-  store_SKU_item_variants_store_SKU_item_variants_updatedByUserIDTorestaurant_users                store_SKU_item_variants[]         @relation("store_SKU_item_variants_updatedByUserIDTorestaurant_users")
-  store_SKU_items_store_SKU_items_approvedByUserIDTorestaurant_users                               store_SKU_items[]                 @relation("store_SKU_items_approvedByUserIDTorestaurant_users")
-  store_SKU_items_store_SKU_items_createdByUserIDTorestaurant_users                                store_SKU_items[]                 @relation("store_SKU_items_createdByUserIDTorestaurant_users")
-  store_SKU_items_store_SKU_items_updatedByUserIDTorestaurant_users                                store_SKU_items[]                 @relation("store_SKU_items_updatedByUserIDTorestaurant_users")
-  store_SKU_sections_store_SKU_sections_approvedByUserIDTorestaurant_users                         store_SKU_sections[]              @relation("store_SKU_sections_approvedByUserIDTorestaurant_users")
-  store_SKU_sections_store_SKU_sections_createdByUserIDTorestaurant_users                          store_SKU_sections[]              @relation("store_SKU_sections_createdByUserIDTorestaurant_users")
-  store_SKU_sections_store_SKU_sections_updatedByUserIDTorestaurant_users                          store_SKU_sections[]              @relation("store_SKU_sections_updatedByUserIDTorestaurant_users")
-  store_inventory                                                                                  store_inventory[]
-  store_purchase                                                                                   store_purchase[]
-  vendor_categories_vendor_categories_approvedByUserIDTorestaurant_users                           vendor_categories[]               @relation("vendor_categories_approvedByUserIDTorestaurant_users")
-  vendor_categories_vendor_categories_createdByUserIDTorestaurant_users                            vendor_categories[]               @relation("vendor_categories_createdByUserIDTorestaurant_users")
-  vendor_categories_vendor_categories_updatedByUserIDTorestaurant_users                            vendor_categories[]               @relation("vendor_categories_updatedByUserIDTorestaurant_users")
-  vendors_vendors_approvedByUserIDTorestaurant_users                                               vendors[]                         @relation("vendors_approvedByUserIDTorestaurant_users")
-  vendors_vendors_createdByUserIDTorestaurant_users                                                vendors[]                         @relation("vendors_createdByUserIDTorestaurant_users")
-  vendors_vendors_updatedByUserIDTorestaurant_users                                                vendors[]                         @relation("vendors_updatedByUserIDTorestaurant_users")
-  waste_management_category_waste_management_category_approvedByUserIDTorestaurant_users           waste_management_category[]       @relation("waste_management_category_approvedByUserIDTorestaurant_users")
-  waste_management_category_waste_management_category_createdByUserIDTorestaurant_users            waste_management_category[]       @relation("waste_management_category_createdByUserIDTorestaurant_users")
-  waste_management_category_waste_management_category_updatedByUserIDTorestaurant_users            waste_management_category[]       @relation("waste_management_category_updatedByUserIDTorestaurant_users")
-  waste_management_items_waste_management_items_approvedByUserIDTorestaurant_users                 waste_management_items[]          @relation("waste_management_items_approvedByUserIDTorestaurant_users")
-  waste_management_items_waste_management_items_createdByUserIDTorestaurant_users                  waste_management_items[]          @relation("waste_management_items_createdByUserIDTorestaurant_users")
-  waste_management_items_waste_management_items_restaurantUserIDTorestaurant_users                 waste_management_items[]          @relation("waste_management_items_restaurantUserIDTorestaurant_users")
-  waste_management_items_waste_management_items_updatedByUserIDTorestaurant_users                  waste_management_items[]          @relation("waste_management_items_updatedByUserIDTorestaurant_users")
+  id                                                                                                 String                            @id
+  restaurantID                                                                                       String?
+  firstName                                                                                          String
+  lastName                                                                                           String?
+  email                                                                                              String                            @unique
+  phoneNumber                                                                                        String                            @unique
+  addressLine1                                                                                       String?
+  addressLine2                                                                                       String?
+  city                                                                                               String?
+  state                                                                                              String?
+  country                                                                                            String?
+  zipCode                                                                                            Int?
+  countryCode                                                                                        String?
+  gender                                                                                             String?
+  dateOfBirth                                                                                        DateTime?
+  userName                                                                                           String                            @unique
+  password                                                                                           String
+  restaurant_rolesId                                                                                 String
+  createdAt                                                                                          DateTime                          @default(now())
+  updatedAt                                                                                          DateTime
+  enabled                                                                                            Boolean                           @default(true)
+  createdBy                                                                                          String?
+  updatedBy                                                                                          String?
+  userType                                                                                           String                            @default("restaurant")
+  document_uploads_tracking_table                                                                    document_uploads_tracking_table[]
+  gas_readings_gas_readings_approvedByUserIDTorestaurant_users                                       gas_readings[]                    @relation("gas_readings_approvedByUserIDTorestaurant_users")
+  gas_readings_gas_readings_createdByUserIDTorestaurant_users                                        gas_readings[]                    @relation("gas_readings_createdByUserIDTorestaurant_users")
+  gas_readings_gas_readings_restaurantUserIDTorestaurant_users                                       gas_readings[]                    @relation("gas_readings_restaurantUserIDTorestaurant_users")
+  gas_readings_gas_readings_updatedByUserIDTorestaurant_users                                        gas_readings[]                    @relation("gas_readings_updatedByUserIDTorestaurant_users")
+  non_cahrgable_items_non_cahrgable_items_approvedByUserIDTorestaurant_users                         non_cahrgable_items[]             @relation("non_cahrgable_items_approvedByUserIDTorestaurant_users")
+  non_cahrgable_items_non_cahrgable_items_createdByUserIDTorestaurant_users                          non_cahrgable_items[]             @relation("non_cahrgable_items_createdByUserIDTorestaurant_users")
+  non_cahrgable_items_non_cahrgable_items_restaurantUserIDTorestaurant_users                         non_cahrgable_items?              @relation("non_cahrgable_items_restaurantUserIDTorestaurant_users")
+  non_cahrgable_items_non_cahrgable_items_updatedByUserIDTorestaurant_users                          non_cahrgable_items[]             @relation("non_cahrgable_items_updatedByUserIDTorestaurant_users")
+  non_chargable_category_non_chargable_category_approvedByUserIDTorestaurant_users                   non_chargable_category[]          @relation("non_chargable_category_approvedByUserIDTorestaurant_users")
+  non_chargable_category_non_chargable_category_createdByUserIDTorestaurant_users                    non_chargable_category[]          @relation("non_chargable_category_createdByUserIDTorestaurant_users")
+  non_chargable_category_non_chargable_category_updatedByUserIDTorestaurant_users                    non_chargable_category[]          @relation("non_chargable_category_updatedByUserIDTorestaurant_users")
+  non_chargeable_sale_categories_non_chargeable_sale_categories_approvedByUserIDTorestaurant_users   non_chargeable_sale_categories[]  @relation("non_chargeable_sale_categories_approvedByUserIDTorestaurant_users")
+  non_chargeable_sale_categories_non_chargeable_sale_categories_createdByUserIDTorestaurant_users    non_chargeable_sale_categories[]  @relation("non_chargeable_sale_categories_createdByUserIDTorestaurant_users")
+  non_chargeable_sale_categories_non_chargeable_sale_categories_updatedByUserIDTorestaurant_users    non_chargeable_sale_categories[]  @relation("non_chargeable_sale_categories_updatedByUserIDTorestaurant_users")
+  non_chargeable_sales_non_chargeable_sales_approvedByUserIDTorestaurant_users                       non_chargeable_sales[]            @relation("non_chargeable_sales_approvedByUserIDTorestaurant_users")
+  non_chargeable_sales_non_chargeable_sales_createdByUserIDTorestaurant_users                        non_chargeable_sales[]            @relation("non_chargeable_sales_createdByUserIDTorestaurant_users")
+  non_chargeable_sales_non_chargeable_sales_updatedByUserIDTorestaurant_users                        non_chargeable_sales[]            @relation("non_chargeable_sales_updatedByUserIDTorestaurant_users")
+  non_chargeable_sales_entries_non_chargeable_sales_entries_approvedByUserIDTorestaurant_users       non_chargeable_sales_entries[]    @relation("non_chargeable_sales_entries_approvedByUserIDTorestaurant_users")
+  non_chargeable_sales_entries_non_chargeable_sales_entries_createdByUserIDTorestaurant_users        non_chargeable_sales_entries[]    @relation("non_chargeable_sales_entries_createdByUserIDTorestaurant_users")
+  non_chargeable_sales_entries_non_chargeable_sales_entries_updatedByUserIDTorestaurant_users        non_chargeable_sales_entries[]    @relation("non_chargeable_sales_entries_updatedByUserIDTorestaurant_users")
+  non_chargeable_sales_entries_v2_non_chargeable_sales_entries_v2_approvedByUserIDTorestaurant_users non_chargeable_sales_entries_v2[] @relation("non_chargeable_sales_entries_v2_approvedByUserIDTorestaurant_users")
+  non_chargeable_sales_entries_v2_non_chargeable_sales_entries_v2_createdByUserIDTorestaurant_users  non_chargeable_sales_entries_v2[] @relation("non_chargeable_sales_entries_v2_createdByUserIDTorestaurant_users")
+  non_chargeable_sales_entries_v2_non_chargeable_sales_entries_v2_updatedByUserIDTorestaurant_users  non_chargeable_sales_entries_v2[] @relation("non_chargeable_sales_entries_v2_updatedByUserIDTorestaurant_users")
+  non_chargeable_sales_v2_non_chargeable_sales_v2_approvedByUserIDTorestaurant_users                 non_chargeable_sales_v2[]         @relation("non_chargeable_sales_v2_approvedByUserIDTorestaurant_users")
+  non_chargeable_sales_v2_non_chargeable_sales_v2_createdByUserIDTorestaurant_users                  non_chargeable_sales_v2[]         @relation("non_chargeable_sales_v2_createdByUserIDTorestaurant_users")
+  non_chargeable_sales_v2_non_chargeable_sales_v2_updatedByUserIDTorestaurant_users                  non_chargeable_sales_v2[]         @relation("non_chargeable_sales_v2_updatedByUserIDTorestaurant_users")
+  restaurant_restaurant_chefIDTorestaurant_users                                                     restaurant[]                      @relation("restaurant_chefIDTorestaurant_users")
+  restaurant_restaurant_storeIDTorestaurant_users                                                    restaurant[]                      @relation("restaurant_storeIDTorestaurant_users")
+  restaurant_SKU_category_restaurant_SKU_category_approvedByUserIDTorestaurant_users                 restaurant_SKU_category[]         @relation("restaurant_SKU_category_approvedByUserIDTorestaurant_users")
+  restaurant_SKU_category_restaurant_SKU_category_createdByUserIDTorestaurant_users                  restaurant_SKU_category[]         @relation("restaurant_SKU_category_createdByUserIDTorestaurant_users")
+  restaurant_SKU_category_restaurant_SKU_category_updatedByUserIDTorestaurant_users                  restaurant_SKU_category[]         @relation("restaurant_SKU_category_updatedByUserIDTorestaurant_users")
+  restaurant_SKU_groups_restaurant_SKU_groups_approvedByUserIDTorestaurant_users                     restaurant_SKU_groups[]           @relation("restaurant_SKU_groups_approvedByUserIDTorestaurant_users")
+  restaurant_SKU_groups_restaurant_SKU_groups_createdByUserIDTorestaurant_users                      restaurant_SKU_groups[]           @relation("restaurant_SKU_groups_createdByUserIDTorestaurant_users")
+  restaurant_SKU_groups_restaurant_SKU_groups_updatedByUserIDTorestaurant_users                      restaurant_SKU_groups[]           @relation("restaurant_SKU_groups_updatedByUserIDTorestaurant_users")
+  restaurant_SKU_item_variants_restaurant_SKU_item_variants_approvedByUserIDTorestaurant_users       restaurant_SKU_item_variants[]    @relation("restaurant_SKU_item_variants_approvedByUserIDTorestaurant_users")
+  restaurant_SKU_item_variants_restaurant_SKU_item_variants_createdByUserIDTorestaurant_users        restaurant_SKU_item_variants[]    @relation("restaurant_SKU_item_variants_createdByUserIDTorestaurant_users")
+  restaurant_SKU_item_variants_restaurant_SKU_item_variants_updatedByUserIDTorestaurant_users        restaurant_SKU_item_variants[]    @relation("restaurant_SKU_item_variants_updatedByUserIDTorestaurant_users")
+  restaurant_SKU_items_restaurant_SKU_items_approvedByUserIDTorestaurant_users                       restaurant_SKU_items[]            @relation("restaurant_SKU_items_approvedByUserIDTorestaurant_users")
+  restaurant_SKU_items_restaurant_SKU_items_createdByUserIDTorestaurant_users                        restaurant_SKU_items[]            @relation("restaurant_SKU_items_createdByUserIDTorestaurant_users")
+  restaurant_SKU_items_restaurant_SKU_items_updatedByUserIDTorestaurant_users                        restaurant_SKU_items[]            @relation("restaurant_SKU_items_updatedByUserIDTorestaurant_users")
+  restaurant_expense_category_restaurant_expense_category_approvedByUserIDTorestaurant_users         restaurant_expense_category[]     @relation("restaurant_expense_category_approvedByUserIDTorestaurant_users")
+  restaurant_expense_category_restaurant_expense_category_createdByUserIDTorestaurant_users          restaurant_expense_category[]     @relation("restaurant_expense_category_createdByUserIDTorestaurant_users")
+  restaurant_expense_category_restaurant_expense_category_updatedByUserIDTorestaurant_users          restaurant_expense_category[]     @relation("restaurant_expense_category_updatedByUserIDTorestaurant_users")
+  restaurant_expenses_restaurant_expenses_approvedByUserIDTorestaurant_users                         restaurant_expenses[]             @relation("restaurant_expenses_approvedByUserIDTorestaurant_users")
+  restaurant_expenses_restaurant_expenses_createdByUserIDTorestaurant_users                          restaurant_expenses[]             @relation("restaurant_expenses_createdByUserIDTorestaurant_users")
+  restaurant_expenses_restaurant_expenses_updatedByUserIDTorestaurant_users                          restaurant_expenses[]             @relation("restaurant_expenses_updatedByUserIDTorestaurant_users")
+  restaurant_issues_restaurant_issues_approvedByUserIDTorestaurant_users                             restaurant_issues[]               @relation("restaurant_issues_approvedByUserIDTorestaurant_users")
+  restaurant_issues_restaurant_issues_createdByUserIDTorestaurant_users                              restaurant_issues[]               @relation("restaurant_issues_createdByUserIDTorestaurant_users")
+  restaurant_issues_restaurant_issues_updatedByUserIDTorestaurant_users                              restaurant_issues[]               @relation("restaurant_issues_updatedByUserIDTorestaurant_users")
+  restaurant_recquisitions_restaurant_recquisitions_approvedByUserIDTorestaurant_users               restaurant_recquisitions[]        @relation("restaurant_recquisitions_approvedByUserIDTorestaurant_users")
+  restaurant_recquisitions_restaurant_recquisitions_createdByUserIDTorestaurant_users                restaurant_recquisitions[]        @relation("restaurant_recquisitions_createdByUserIDTorestaurant_users")
+  restaurant_recquisitions_restaurant_recquisitions_updatedByUserIDTorestaurant_users                restaurant_recquisitions[]        @relation("restaurant_recquisitions_updatedByUserIDTorestaurant_users")
+  restaurant_restaurant_users_restaurantIDTorestaurant                                               restaurant?                       @relation("restaurant_users_restaurantIDTorestaurant", fields: [restaurantID], references: [id])
+  restaurant_roles                                                                                   restaurant_roles                  @relation(fields: [restaurant_rolesId], references: [id])
+  store_SKU_category_store_SKU_category_approvedByUserIDTorestaurant_users                           store_SKU_category[]              @relation("store_SKU_category_approvedByUserIDTorestaurant_users")
+  store_SKU_category_store_SKU_category_createdByUserIDTorestaurant_users                            store_SKU_category[]              @relation("store_SKU_category_createdByUserIDTorestaurant_users")
+  store_SKU_category_store_SKU_category_updatedByUserIDTorestaurant_users                            store_SKU_category[]              @relation("store_SKU_category_updatedByUserIDTorestaurant_users")
+  store_SKU_item_variants_store_SKU_item_variants_approvedByUserIDTorestaurant_users                 store_SKU_item_variants[]         @relation("store_SKU_item_variants_approvedByUserIDTorestaurant_users")
+  store_SKU_item_variants_store_SKU_item_variants_createdByUserIDTorestaurant_users                  store_SKU_item_variants[]         @relation("store_SKU_item_variants_createdByUserIDTorestaurant_users")
+  store_SKU_item_variants_store_SKU_item_variants_updatedByUserIDTorestaurant_users                  store_SKU_item_variants[]         @relation("store_SKU_item_variants_updatedByUserIDTorestaurant_users")
+  store_SKU_items_store_SKU_items_approvedByUserIDTorestaurant_users                                 store_SKU_items[]                 @relation("store_SKU_items_approvedByUserIDTorestaurant_users")
+  store_SKU_items_store_SKU_items_createdByUserIDTorestaurant_users                                  store_SKU_items[]                 @relation("store_SKU_items_createdByUserIDTorestaurant_users")
+  store_SKU_items_store_SKU_items_updatedByUserIDTorestaurant_users                                  store_SKU_items[]                 @relation("store_SKU_items_updatedByUserIDTorestaurant_users")
+  store_SKU_sections_store_SKU_sections_approvedByUserIDTorestaurant_users                           store_SKU_sections[]              @relation("store_SKU_sections_approvedByUserIDTorestaurant_users")
+  store_SKU_sections_store_SKU_sections_createdByUserIDTorestaurant_users                            store_SKU_sections[]              @relation("store_SKU_sections_createdByUserIDTorestaurant_users")
+  store_SKU_sections_store_SKU_sections_updatedByUserIDTorestaurant_users                            store_SKU_sections[]              @relation("store_SKU_sections_updatedByUserIDTorestaurant_users")
+  store_inventory                                                                                    store_inventory[]
+  store_purchase                                                                                     store_purchase[]
+  vendor_categories_vendor_categories_approvedByUserIDTorestaurant_users                             vendor_categories[]               @relation("vendor_categories_approvedByUserIDTorestaurant_users")
+  vendor_categories_vendor_categories_createdByUserIDTorestaurant_users                              vendor_categories[]               @relation("vendor_categories_createdByUserIDTorestaurant_users")
+  vendor_categories_vendor_categories_updatedByUserIDTorestaurant_users                              vendor_categories[]               @relation("vendor_categories_updatedByUserIDTorestaurant_users")
+  vendors_vendors_approvedByUserIDTorestaurant_users                                                 vendors[]                         @relation("vendors_approvedByUserIDTorestaurant_users")
+  vendors_vendors_createdByUserIDTorestaurant_users                                                  vendors[]                         @relation("vendors_createdByUserIDTorestaurant_users")
+  vendors_vendors_updatedByUserIDTorestaurant_users                                                  vendors[]                         @relation("vendors_updatedByUserIDTorestaurant_users")
+  waste_management_category_waste_management_category_approvedByUserIDTorestaurant_users             waste_management_category[]       @relation("waste_management_category_approvedByUserIDTorestaurant_users")
+  waste_management_category_waste_management_category_createdByUserIDTorestaurant_users              waste_management_category[]       @relation("waste_management_category_createdByUserIDTorestaurant_users")
+  waste_management_category_waste_management_category_updatedByUserIDTorestaurant_users              waste_management_category[]       @relation("waste_management_category_updatedByUserIDTorestaurant_users")
+  waste_management_items_waste_management_items_approvedByUserIDTorestaurant_users                   waste_management_items[]          @relation("waste_management_items_approvedByUserIDTorestaurant_users")
+  waste_management_items_waste_management_items_createdByUserIDTorestaurant_users                    waste_management_items[]          @relation("waste_management_items_createdByUserIDTorestaurant_users")
+  waste_management_items_waste_management_items_restaurantUserIDTorestaurant_users                   waste_management_items[]          @relation("waste_management_items_restaurantUserIDTorestaurant_users")
+  waste_management_items_waste_management_items_updatedByUserIDTorestaurant_users                    waste_management_items[]          @relation("waste_management_items_updatedByUserIDTorestaurant_users")
 }
 
 model store_SKU_category {
@@ -866,6 +872,7 @@ model store_SKU_item_variants {
   updatedByUserID                                                             String?
   approvedByUserID                                                            String?
   non_chargeable_sales                                                        non_chargeable_sales[]
+  non_chargeable_sales_v2                                                     non_chargeable_sales_v2[]
   restaurant_recquisition_items                                               restaurant_recquisition_items[]
   store_SKU_items                                                             store_SKU_items                          @relation(fields: [SKUItemID], references: [id])
   restaurant_users_store_SKU_item_variants_approvedByUserIDTorestaurant_users restaurant_users?                        @relation("store_SKU_item_variants_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
@@ -1158,18 +1165,19 @@ model vendors {
 }
 
 model waste_management_category {
-  id                                                                            String            @id
-  wasteManagementCategoryName                                                   String            @unique
-  approvalStatus                                                                Boolean           @default(false)
-  createdAt                                                                     DateTime          @default(now())
+  id                                                                            String                   @id
+  wasteManagementCategoryName                                                   String                   @unique
+  approvalStatus                                                                Boolean                  @default(false)
+  createdAt                                                                     DateTime                 @default(now())
   updatedAt                                                                     DateTime
-  enabled                                                                       Boolean           @default(true)
+  enabled                                                                       Boolean                  @default(true)
   createdByUserID                                                               String?
   updatedByUserID                                                               String?
   approvedByUserID                                                              String?
-  restaurant_users_waste_management_category_approvedByUserIDTorestaurant_users restaurant_users? @relation("waste_management_category_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
-  restaurant_users_waste_management_category_createdByUserIDTorestaurant_users  restaurant_users? @relation("waste_management_category_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
-  restaurant_users_waste_management_category_updatedByUserIDTorestaurant_users  restaurant_users? @relation("waste_management_category_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+  restaurant_users_waste_management_category_approvedByUserIDTorestaurant_users restaurant_users?        @relation("waste_management_category_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  restaurant_users_waste_management_category_createdByUserIDTorestaurant_users  restaurant_users?        @relation("waste_management_category_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
+  restaurant_users_waste_management_category_updatedByUserIDTorestaurant_users  restaurant_users?        @relation("waste_management_category_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id])
+  waste_management_items                                                        waste_management_items[]
 }
 
 model waste_management_items {
@@ -1184,7 +1192,9 @@ model waste_management_items {
   createdByUserID                                                            String?
   updatedByUserID                                                            String?
   approvedByUserID                                                           String?
+  categoryID                                                                 String?
   restaurant_users_waste_management_items_approvedByUserIDTorestaurant_users restaurant_users?             @relation("waste_management_items_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
+  waste_management_category                                                  waste_management_category?    @relation(fields: [categoryID], references: [id])
   restaurant_users_waste_management_items_createdByUserIDTorestaurant_users  restaurant_users?             @relation("waste_management_items_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id])
   restaurant_SKU_item_variants                                               restaurant_SKU_item_variants? @relation(fields: [restaurantSKUItemVariantID], references: [id])
   restaurant_users_waste_management_items_restaurantUserIDTorestaurant_users restaurant_users              @relation("waste_management_items_restaurantUserIDTorestaurant_users", fields: [restaurantUserID], references: [id])
@@ -1205,6 +1215,86 @@ model zomato {
   status                          String?
   orderType                       String?
   document_uploads_tracking_table document_uploads_tracking_table? @relation(fields: [documentUploadTrackingTableID], references: [id])
+}
+
+model non_chargeable_sales_entries_v2 {
+  id                                                                                  String                  @id
+  ncItemSalesID                                                                       String
+  date                                                                                String
+  quantity                                                                            Int
+  createdByUserID                                                                     String?
+  updatedByUserID                                                                     String?
+  approvedByUserID                                                                    String?
+  trailedByUser                                                                       String?
+  reason                                                                              String?
+  createdAt                                                                           DateTime                @default(now())
+  updatedAt                                                                           DateTime
+  amount                                                                              Int                     @default(0)
+  restaurant_users_non_chargeable_sales_entries_v2_approvedByUserIDTorestaurant_users restaurant_users?       @relation("non_chargeable_sales_entries_v2_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id], onDelete: Cascade)
+  restaurant_users_non_chargeable_sales_entries_v2_createdByUserIDTorestaurant_users  restaurant_users?       @relation("non_chargeable_sales_entries_v2_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id], onDelete: Cascade)
+  non_chargeable_sales_v2                                                             non_chargeable_sales_v2 @relation(fields: [ncItemSalesID], references: [id])
+  restaurant_users_non_chargeable_sales_entries_v2_updatedByUserIDTorestaurant_users  restaurant_users?       @relation("non_chargeable_sales_entries_v2_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id], onDelete: Cascade)
+}
+
+model non_chargeable_sales_v2 {
+  id                                                                          String                            @id
+  nonChargeableSaleCategoryID                                                 String
+  restaurantSKUItemID                                                         BigInt?
+  storeSKUItemVarintID                                                        String?
+  quantity                                                                    Int
+  monthIndex                                                                  Int
+  year                                                                        Int
+  amount                                                                      Int
+  restaurantID                                                                String?
+  createdByUserID                                                             String?
+  updatedByUserID                                                             String?
+  approvedByUserID                                                            String?
+  createdAt                                                                   DateTime                          @default(now())
+  updatedAt                                                                   DateTime
+  restaurant_new_SKU_categoryC_id                                             BigInt?
+  non_chargeable_sales_entries_v2                                             non_chargeable_sales_entries_v2[]
+  restaurant_users_non_chargeable_sales_v2_approvedByUserIDTorestaurant_users restaurant_users?                 @relation("non_chargeable_sales_v2_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id], onDelete: Cascade)
+  restaurant_users_non_chargeable_sales_v2_createdByUserIDTorestaurant_users  restaurant_users?                 @relation("non_chargeable_sales_v2_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id], onDelete: Cascade)
+  non_chargeable_sale_categories                                              non_chargeable_sale_categories    @relation(fields: [nonChargeableSaleCategoryID], references: [id])
+  restaurant_new_SKU_items                                                    restaurant_new_SKU_items?         @relation(fields: [restaurantSKUItemID], references: [item_id])
+  restaurant_new_SKU_category                                                 restaurant_new_SKU_category?      @relation(fields: [restaurant_new_SKU_categoryC_id], references: [c_id])
+  store_SKU_item_variants                                                     store_SKU_item_variants?          @relation(fields: [storeSKUItemVarintID], references: [id])
+  restaurant_users_non_chargeable_sales_v2_updatedByUserIDTorestaurant_users  restaurant_users?                 @relation("non_chargeable_sales_v2_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id], onDelete: Cascade)
+}
+
+model restaurant_new_SKU_category {
+  c_id                     BigInt                     @id @unique
+  c_name                   String                     @unique
+  non_chargeable_sales_v2  non_chargeable_sales_v2[]
+  restaurant_new_SKU_items restaurant_new_SKU_items[]
+}
+
+model restaurant_new_SKU_group {
+  group_category_id        BigInt                     @id @unique
+  g_name                   String                     @unique
+  restaurant_new_SKU_items restaurant_new_SKU_items[]
+}
+
+model restaurant_new_SKU_items {
+  item_id                     BigInt                       @id @unique
+  price                       Int
+  name                        String                       @unique
+  old_item_id                 BigInt?
+  i_s_name                    String?
+  c_id                        BigInt?
+  group_category_id           BigInt?
+  v_id                        BigInt?
+  OrderItem                   OrderItem[]
+  non_chargeable_sales_v2     non_chargeable_sales_v2[]
+  restaurant_new_SKU_category restaurant_new_SKU_category? @relation(fields: [c_id], references: [c_id])
+  restaurant_new_SKU_group    restaurant_new_SKU_group?    @relation(fields: [group_category_id], references: [group_category_id])
+  restaurant_new_SKU_variants restaurant_new_SKU_variants? @relation(fields: [v_id], references: [v_id])
+}
+
+model restaurant_new_SKU_variants {
+  v_id                     BigInt                     @id @unique
+  v_name                   String?
+  restaurant_new_SKU_items restaurant_new_SKU_items[]
 }
 
 enum Category {
