@@ -23,26 +23,24 @@ const receiveMessage = async () => {
     const data = await sqsClient.send(command);
     const Messages = data.Messages;
     if (Messages && Messages[0].Body) {
-      console.log('🚀 ~ receiveMessage ~ Messages:', Messages);
       const body = await JSON.parse(Messages[0].Body);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const MessageId = Messages[0].MessageId;
       const receiptHandle = Messages[0].ReceiptHandle;
 
-      const region = body.Records[0].awsRegion;
+      // const region = body.Records[0].awsRegion;
       const bucketName = body.Records[0].s3.bucket.name;
       const objectKey = body.Records[0].s3.object.key;
 
       // Fetch the URL
-      const URL = `https://${bucketName}.s3.${region}.amazonaws.com/${objectKey}`;
-      console.log('🚀 ~ receiveMessage ~ URL:', URL);
+      // const URL = `https://${bucketName}.s3.${region}.amazonaws.com/${objectKey}`;
 
       // Get Signed URL from S3
       const result = await getSignedFileUrl(objectKey, bucketName);
-      console.log('🚀 ~ receiveMessage ~ result:', result);
 
       // Download File from the URL
-      const { filePath, downloadStatus } = await downloader(result);
-      console.log('🚀 ~ receiveMessage ~ filePath, downloadStatus:', filePath, downloadStatus);
+      const { filePath } = await downloader(result);
+      // console.log('🚀 ~ receiveMessage ~ filePath, downloadStatus:', filePath, downloadStatus);
       if (!filePath) {
         throw error;
       }
@@ -62,8 +60,6 @@ const receiveMessage = async () => {
       }
 
       // Delete The notification
-      console.log('🚀 ~ receiveMessage ~ MessageId:', MessageId);
-      console.log('🚀 ~ receiveMessage ~ receiptHandle:', receiptHandle);
       const deleteParams = {
         QueueUrl: queueURL,
         ReceiptHandle: receiptHandle,
@@ -82,7 +78,7 @@ const receiveMessage = async () => {
     console.log('Receive Error', err);
   } finally {
     // Call receiveMessage again to poll for the next message
-    setTimeout(receiveMessage, 10000); // Adjust the interval as needed
+    // setTimeout(receiveMessage, 10000);
   }
 };
 // Continuously poll for new messages
