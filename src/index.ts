@@ -1,15 +1,18 @@
 import express from 'express';
 import { env } from './config/envValidate';
 
-import { DeleteMessageCommand, ReceiveMessageCommand } from '@aws-sdk/client-sqs';
+import { ReceiveMessageCommand } from '@aws-sdk/client-sqs';
 import { error } from 'console';
 import 'dotenv/config';
 import fs from 'fs/promises';
+import path from 'path';
+import { getAllFilePaths } from './config/readFilePath';
 import { getSignedFileUrl, queueURL, sqsClient } from './constants/AWS';
 import { downloader } from './helper/downloader';
 import { getDataFromFile } from './helper/getDataFromFile';
 import { sendDataToDb } from './helper/sendDataToDB';
 const app = express();
+const downloadsDir = path.join(__dirname, 'downloads');
 
 const receiveMessage = async () => {
   const params = {
@@ -54,19 +57,24 @@ const receiveMessage = async () => {
 
       // Fetch important data from the object
       // Save the data in the database
-      const fileProcessingStatus = await sendDataToDb(response);
+
+      //Code To be deleted Later
+      const filePaths = getAllFilePaths(downloadsDir);
+      const response2 = await getDataFromFile(filePaths[0]);
+      //
+      const fileProcessingStatus = await sendDataToDb(response2);
       if (!fileProcessingStatus) {
         throw new Error('Failed to send data to database');
       }
 
       // Delete The notification
-      const deleteParams = {
-        QueueUrl: queueURL,
-        ReceiptHandle: receiptHandle,
-      };
-      const deleteCommand = new DeleteMessageCommand(deleteParams);
-      await sqsClient.send(deleteCommand);
-      console.log('Message deleted from the queue');
+      // const deleteParams = {
+      //   QueueUrl: queueURL,
+      //   ReceiptHandle: receiptHandle,
+      // };
+      // const deleteCommand = new DeleteMessageCommand(deleteParams);
+      // await sqsClient.send(deleteCommand);
+      // console.log('Message deleted from the queue');
 
       // If the Notification is deleted then delete the file present in my local
       await fs.unlink(filePath);
