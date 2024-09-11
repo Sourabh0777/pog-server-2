@@ -13,35 +13,65 @@ export const sendDataToDb = async (response: any) => {
             return;
           }
 
-          const itemExistsById = await prisma.restaurant_new_SKU_items.findUnique({
-            where: { item_id: parseInt(item.item_id) },
-          });
+          // Create Restaurant
+          let findRestaurant = await prisma.newRestaurant.findUnique({ where: { restaurant_id: parseInt(item.restaurant_id) } });
+          let createRestaurant;
+          if (!findRestaurant) {
+            createRestaurant = await prisma.newRestaurant.create({ data: { restaurant_id: parseInt(item.restaurant_id) } });
+          }
 
-          const itemExistsByName = await prisma.restaurant_new_SKU_items.findUnique({
-            where: { name: item.name },
+          const restaurantId = findRestaurant?.restaurant_id || createRestaurant?.restaurant_id;
+          if (!restaurantId) {
+            throw new Error('Restaurant ID is undefined');
+          }
+
+          const itemExistsById = await prisma.restaurant_new_SKU_items.findFirst({
+            where: { restaurant_id: restaurantId, item_id: parseInt(item.item_id) },
+          });
+          const itemExistsByName = await prisma.restaurant_new_SKU_items.findFirst({
+            where: { restaurant_id: restaurantId, name: item.name },
           });
           let createItem = null;
+
           if (!itemExistsById && !itemExistsByName) {
             const item_extra_data = JSON.parse(item.item_extra_data);
-
-            // Category
-            const findCategoryById = await prisma.restaurant_new_SKU_category.findUnique({ where: { c_id: parseInt(item_extra_data.c_id) } });
-            const findCategoryByName = await prisma.restaurant_new_SKU_category.findUnique({ where: { c_name: item_extra_data.c_name } });
-            let createCategory;
-            if (!findCategoryById && !findCategoryByName) {
-              createCategory = await prisma.restaurant_new_SKU_category.create({ data: { c_id: parseInt(item_extra_data.c_id), c_name: item_extra_data.c_name } });
+            if (!item_extra_data) {
+              return;
+            }
+            // Create Restaurant
+            let findRestaurant = await prisma.newRestaurant.findUnique({ where: { restaurant_id: parseInt(item.restaurant_id) } });
+            let createRestaurant;
+            if (!findRestaurant) {
+              createRestaurant = await prisma.newRestaurant.create({ data: { restaurant_id: parseInt(item.restaurant_id) } });
+            }
+            const restaurantId = findRestaurant?.restaurant_id || createRestaurant?.restaurant_id;
+            if (!restaurantId) {
+              throw new Error('Restaurant ID is undefined');
             }
 
             // Group
-            const findGroupById = await prisma.restaurant_new_SKU_group.findUnique({ where: { group_category_id: parseInt(item.group_category_id) } });
-            const findGroupByName = await prisma.restaurant_new_SKU_group.findUnique({ where: { g_name: item_extra_data.g_name } });
+            const findGroupById = await prisma.restaurant_new_SKU_group.findFirst({ where: { restaurant_id: restaurantId, group_category_id: parseInt(item.group_category_id) } });
+            const findGroupByName = await prisma.restaurant_new_SKU_group.findFirst({ where: { restaurant_id: restaurantId, g_name: item_extra_data.g_name } });
             let createGroup;
             if (!findGroupById && !findGroupByName) {
-              createGroup = await prisma.restaurant_new_SKU_group.create({ data: { group_category_id: parseInt(item.group_category_id), g_name: item_extra_data.g_name } });
+              createGroup = await prisma.restaurant_new_SKU_group.create({
+                data: { group_category_id: parseInt(item.group_category_id), g_name: item_extra_data.g_name, restaurant_id: restaurantId },
+              });
+              console.log('🚀 ~ orderData.OrderItem.map ~ createGroup:', createGroup);
+            }
+            // Category
+            const findCategoryById = await prisma.restaurant_new_SKU_category.findFirst({ where: { restaurant_id: restaurantId, c_id: parseInt(item_extra_data.c_id) } });
+            const findCategoryByName = await prisma.restaurant_new_SKU_category.findFirst({ where: { restaurant_id: restaurantId, c_name: item_extra_data.c_name } });
+            let createCategory;
+            if (!findCategoryById && !findCategoryByName) {
+              createCategory = await prisma.restaurant_new_SKU_category.create({
+                data: { c_id: parseInt(item_extra_data.c_id), c_name: item_extra_data.c_name, restaurant_id: restaurantId },
+              });
+              console.log('🚀 ~ orderData.OrderItem.map ~ createCategory:', createCategory);
             }
 
             // Varient
-            const varientById = await prisma.restaurant_new_SKU_variants.findUnique({ where: { v_id: parseInt(item_extra_data.v_id) } });
+            const varientById = await prisma.restaurant_new_SKU_variants.findFirst({ where: { v_id: parseInt(item_extra_data.v_id) } });
             let createVarient;
             if (varientById) {
               createVarient = await prisma.restaurant_new_SKU_variants.create({ data: { v_id: item_extra_data.v_id, v_name: item_extra_data.v_name } });
@@ -53,23 +83,25 @@ export const sendDataToDb = async (response: any) => {
                 item_id: parseInt(item.item_id),
                 price: parseInt(item.price),
                 name: item.name,
-                old_item_id: item.old_item_id ? parseInt(item.old_item_id) : null,
-                i_s_name: item_extra_data.i_s_name ? item_extra_data.i_s_name : null,
-                c_id: findCategoryById?.c_id || findCategoryByName?.c_id || createCategory?.c_id,
-                group_category_id: findGroupById?.group_category_id || findGroupByName?.group_category_id || createGroup?.group_category_id,
-                v_id: varientById?.v_id || createVarient?.v_id,
+                restaurant_id: restaurantId,
+                old_item_id: parseInt(item.old_item_id),
+                i_s_name: item_extra_data.i_s_name,
+                c_id: findCategoryById?.id || findCategoryByName?.id || createCategory?.id,
+                group_category_id: findGroupById?.id || findGroupByName?.id || createGroup?.id,
+                v_id: varientById?.id || createVarient?.id,
               },
             });
           }
 
           return {
-            item_id: itemExistsById?.item_id || itemExistsByName?.item_id || (await createItem)?.item_id,
+            item_id: itemExistsById?.id || itemExistsByName?.id || (await createItem)?.id,
             quantity: parseInt(item.quantity),
             price: parseInt(item.price),
             original_price: parseInt(item.original_price),
             total: parseInt(item.total),
             total_discount: parseInt(item.total_discount),
             total_tax: parseInt(item.total_tax),
+            restaurantID: restaurantId,
           };
         })
       );
@@ -79,7 +111,6 @@ export const sendDataToDb = async (response: any) => {
       array = array.filter(item => {
         return item !== null && item !== undefined;
       });
-      console.log('🚀 ~ sendDataToDb ~ array:', array);
 
       // Create Order
       const createdOrder = await prisma.order.create({
@@ -107,6 +138,7 @@ export const sendDataToDb = async (response: any) => {
           },
         },
       });
+      console.log('🚀 ~ sendDataToDb ~ createdOrder:', createdOrder);
     }
     // return true;
   } catch (error) {
