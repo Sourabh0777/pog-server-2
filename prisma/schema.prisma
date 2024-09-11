@@ -1006,10 +1006,10 @@ model store_inventory_details {
 
 model store_purchase {
   id                      String                    @id
-  restaurandID            String?
+  restaurantID            String?
   vendorID                String
   storeSKUItemVariantsID  String
-  storePurcuaseRate       Int
+  storePurchaseRate       Int
   createdAt               DateTime                  @default(now())
   updatedAt               DateTime
   restaurantUserID        String?
@@ -1022,6 +1022,7 @@ model store_purchase {
   storePurchaseAmount     Int
   storePurchaseQuantity   Int
   isDeleted               Boolean                   @default(false)
+  totalWasted             Int                       @default(0)
   restaurant_issued_items restaurant_issued_items[]
   restaurant_users        restaurant_users?         @relation(fields: [restaurantUserID], references: [id])
   store_SKU_item_variants store_SKU_item_variants   @relation(fields: [storeSKUItemVariantsID], references: [id])
@@ -1323,11 +1324,15 @@ model restaurant_new_SKU_category {
   c_id                            BigInt
   c_name                          String
   restaurant_id                   Int
-  isBuffet                        Boolean?
-  meal_type                       MealType?
+  isBuffet                        String?
   id                              String                            @id @default(uuid())
+  meal_type                       String?
+  buffetTypeId                    String?
+  mealTypeId                      String?
   non_chargeable_sales_entries_v2 non_chargeable_sales_entries_v2[]
   non_chargeable_sales_v2         non_chargeable_sales_v2[]
+  buffetType                      buffetType?                       @relation(fields: [buffetTypeId], references: [id])
+  mealType                        mealType?                         @relation(fields: [mealTypeId], references: [id])
   newRestaurant                   newRestaurant                     @relation(fields: [restaurant_id], references: [restaurant_id])
   restaurant_new_SKU_items        restaurant_new_SKU_items[]
 }
@@ -1351,14 +1356,16 @@ model restaurant_new_SKU_items {
   group_category_id               String?
   v_id                            String?
   restaurant_id                   Int
-  isAdult                         Boolean?
-  isVeg                           Boolean?
+  isAdult                         String?
+  isVeg                           String?
   id                              String                            @id @default(uuid())
   OrderItem                       OrderItem[]
   non_chargeable_sales_entries_v2 non_chargeable_sales_entries_v2[]
   non_chargeable_sales_v2         non_chargeable_sales_v2[]
   restaurant_new_SKU_category     restaurant_new_SKU_category?      @relation(fields: [c_id], references: [id])
   restaurant_new_SKU_group        restaurant_new_SKU_group?         @relation(fields: [group_category_id], references: [id])
+  customerType                    customerType?                     @relation(fields: [isAdult], references: [id])
+  vegetarianMark                  vegetarianMark?                   @relation(fields: [isVeg], references: [id])
   newRestaurant                   newRestaurant                     @relation(fields: [restaurant_id], references: [restaurant_id])
   restaurant_new_SKU_variants     restaurant_new_SKU_variants?      @relation(fields: [v_id], references: [id])
 }
@@ -1378,6 +1385,34 @@ model newRestaurant {
   restaurant_new_SKU_category restaurant_new_SKU_category[]
   restaurant_new_SKU_group    restaurant_new_SKU_group[]
   restaurant_new_SKU_items    restaurant_new_SKU_items[]
+}
+
+model buffetType {
+  id                          String                        @id
+  buffetTypeName              String
+  enabled                     Boolean
+  restaurant_new_SKU_category restaurant_new_SKU_category[]
+}
+
+model customerType {
+  id                       String                     @id
+  customerTypeName         String
+  enabled                  Boolean
+  restaurant_new_SKU_items restaurant_new_SKU_items[]
+}
+
+model mealType {
+  id                          String                        @id
+  mealTypeName                String
+  enabled                     Boolean
+  restaurant_new_SKU_category restaurant_new_SKU_category[]
+}
+
+model vegetarianMark {
+  id                       String                     @id
+  vegetarianMarkType       String
+  enabled                  Boolean
+  restaurant_new_SKU_items restaurant_new_SKU_items[]
 }
 
 enum Category {
@@ -1452,10 +1487,4 @@ enum OrderTypeEnum {
   dine_in
   delivery
   pickup
-}
-
-enum MealType {
-  DINNER
-  LUNCH
-  NOT_APPLICABLE
 }

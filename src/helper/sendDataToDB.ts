@@ -140,7 +140,7 @@ export const sendDataToDb = async (response: any) => {
       });
       console.log('🚀 ~ sendDataToDb ~ createdOrder:', createdOrder);
     }
-    // return true;
+    return true;
   } catch (error) {
     console.error('Error sending data to DB:', error);
     return false; // Return false if there's an error

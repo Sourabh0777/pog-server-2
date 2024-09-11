@@ -2,7 +2,7 @@ import express from 'express';
 import { env } from './config/envValidate';
 
 import { ReceiveMessageCommand } from '@aws-sdk/client-sqs';
-import { error } from 'console';
+import { error, log } from 'console';
 import 'dotenv/config';
 import fs from 'fs/promises';
 import path from 'path';
@@ -60,9 +60,11 @@ const receiveMessage = async () => {
 
       //Code To be deleted Later
       const filePaths = getAllFilePaths(downloadsDir);
-      const response2 = await getDataFromFile(filePaths[0]);
+      const response2 = await getDataFromFile(filePaths[1]);
       //
       const fileProcessingStatus = await sendDataToDb(response2);
+      console.log(fileProcessingStatus);
+
       if (!fileProcessingStatus) {
         throw new Error('Failed to send data to database');
       }
@@ -93,5 +95,5 @@ const receiveMessage = async () => {
 receiveMessage();
 
 app.listen(env.PORT, () => {
-  console.log('listening to port 500');
+  console.log(`listening to port ${env.PORT}`);
 });
