@@ -49,34 +49,39 @@ export const sendDataToDb = async (response: any) => {
               throw new Error('Restaurant ID is undefined');
             }
 
-            // Group
+            // Create Group
             const findGroupById = await prisma.restaurant_new_SKU_group.findFirst({ where: { restaurant_id: restaurantId, group_category_id: parseInt(item.group_category_id) } });
-            const findGroupByName = await prisma.restaurant_new_SKU_group.findFirst({ where: { restaurant_id: restaurantId, g_name: item_extra_data.g_name } });
+            const findGroupByName = await prisma.restaurant_new_SKU_group.findFirst({ where: { restaurant_id: restaurantId, group_name: item_extra_data.g_name } });
             let createGroup;
             if (!findGroupById && !findGroupByName) {
               createGroup = await prisma.restaurant_new_SKU_group.create({
-                data: { group_category_id: parseInt(item.group_category_id), g_name: item_extra_data.g_name, restaurant_id: restaurantId },
+                data: { group_category_id: parseInt(item.group_category_id), group_name: item_extra_data.g_name, restaurant_id: restaurantId },
               });
               console.log('🚀 ~ orderData.OrderItem.map ~ createGroup:', createGroup);
             }
-            // Category
-            const findCategoryById = await prisma.restaurant_new_SKU_category.findFirst({ where: { restaurant_id: restaurantId, c_id: parseInt(item_extra_data.c_id) } });
-            const findCategoryByName = await prisma.restaurant_new_SKU_category.findFirst({ where: { restaurant_id: restaurantId, c_name: item_extra_data.c_name } });
+
+            // Create restaurant_new_SKU_category
+            const findCategoryById = await prisma.restaurant_new_SKU_category.findFirst({ where: { restaurant_id: restaurantId, category_id: parseInt(item_extra_data.c_id) } });
+            const findCategoryByName = await prisma.restaurant_new_SKU_category.findFirst({ where: { restaurant_id: restaurantId, category_name: item_extra_data.c_name } });
             let createCategory;
             if (!findCategoryById && !findCategoryByName) {
               createCategory = await prisma.restaurant_new_SKU_category.create({
-                data: { c_id: parseInt(item_extra_data.c_id), c_name: item_extra_data.c_name, restaurant_id: restaurantId },
+                data: { category_id: parseInt(item_extra_data.c_id), category_name: item_extra_data.c_name, restaurant_id: restaurantId },
               });
               console.log('🚀 ~ orderData.OrderItem.map ~ createCategory:', createCategory);
             }
 
-            // Varient
-            const varientById = await prisma.restaurant_new_SKU_variants.findFirst({ where: { v_id: parseInt(item_extra_data.v_id) } });
+            // Create restaurant_new_SKU_variants
+            let checkVarientExists;
             let createVarient;
-            if (varientById) {
-              createVarient = await prisma.restaurant_new_SKU_variants.create({ data: { v_id: item_extra_data.v_id, v_name: item_extra_data.v_name } });
+            if (item_extra_data.v_id !== 0) {
+              checkVarientExists = await prisma.restaurant_new_SKU_variants.findFirst({ where: { variant_id: parseInt(item_extra_data.v_id) } });
+              if (!checkVarientExists) {
+                const variant = { variant_id: parseInt(item_extra_data.v_id), variant_name: item_extra_data.v_name };
+                createVarient = await prisma.restaurant_new_SKU_variants.create({ data: variant });
+                console.log('🚀 ~ orderData.OrderItem.map ~ createVarient:', createVarient);
+              }
             }
-
             //Create  Item
             createItem = prisma.restaurant_new_SKU_items.create({
               data: {
@@ -86,9 +91,9 @@ export const sendDataToDb = async (response: any) => {
                 restaurant_id: restaurantId,
                 old_item_id: parseInt(item.old_item_id),
                 i_s_name: item_extra_data.i_s_name,
-                c_id: findCategoryById?.id || findCategoryByName?.id || createCategory?.id,
+                category_id: findCategoryById?.id || findCategoryByName?.id || createCategory?.id,
                 group_category_id: findGroupById?.id || findGroupByName?.id || createGroup?.id,
-                v_id: varientById?.id || createVarient?.id,
+                variant_id: checkVarientExists?.id || createVarient?.id,
               },
             });
           }
@@ -102,6 +107,8 @@ export const sendDataToDb = async (response: any) => {
             total_discount: parseInt(item.total_discount),
             total_tax: parseInt(item.total_tax),
             restaurantID: restaurantId,
+            createdAt: new Date(Order.created_date),
+            packingCharge: parseInt(item.packing_charge),
           };
         })
       );
@@ -119,6 +126,7 @@ export const sendDataToDb = async (response: any) => {
           invoiceID: parseInt(Order.invoice_id),
           paymentTypeID: parseInt(Order.payment_type),
           orderTypeID: parseInt(Order.order_type),
+          createdAt: new Date(Order.created_date),
           paymentStatus: Order.payment_confirmation,
           cancelReason: Order.cancel_order_description || null,
           orderAmount: parseFloat(Order.core_price),

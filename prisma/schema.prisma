@@ -50,7 +50,8 @@ model Order {
   CGST                   Float?
   SGST                   Float?
   VAT                    Float?
-  createdAt              DateTime      @default(now())
+  createdAt              DateTime
+  paymentType            String?
   newRestaurant          newRestaurant @relation(fields: [restaurantID], references: [restaurant_id])
   OrderItem              OrderItem[]
 }
@@ -59,7 +60,7 @@ model OrderItem {
   id                       Int                       @id @unique @default(autoincrement())
   orderID                  Int
   quantity                 Int?
-  createdAt                DateTime                  @default(now())
+  createdAt                DateTime
   NCFlag                   Boolean                   @default(false)
   item_id                  String?
   original_price           Float?
@@ -68,6 +69,7 @@ model OrderItem {
   total_discount           Float?                    @default(0)
   total_tax                Float?
   restaurantID             Int
+  packingCharge            Int                       @default(0)
   restaurant_new_SKU_items restaurant_new_SKU_items? @relation(fields: [item_id], references: [id])
   Order                    Order                     @relation(fields: [orderID], references: [id])
   newRestaurant            newRestaurant             @relation(fields: [restaurantID], references: [restaurant_id])
@@ -1321,14 +1323,14 @@ model non_chargeable_sales_v2 {
 }
 
 model restaurant_new_SKU_category {
-  c_id                            BigInt
-  c_name                          String
   restaurant_id                   Int
   isBuffet                        String?
   id                              String                            @id @default(uuid())
   meal_type                       String?
   buffetTypeId                    String?
   mealTypeId                      String?
+  category_id                     BigInt
+  category_name                   String
   non_chargeable_sales_entries_v2 non_chargeable_sales_entries_v2[]
   non_chargeable_sales_v2         non_chargeable_sales_v2[]
   buffetType                      buffetType?                       @relation(fields: [buffetTypeId], references: [id])
@@ -1339,9 +1341,9 @@ model restaurant_new_SKU_category {
 
 model restaurant_new_SKU_group {
   group_category_id        BigInt
-  g_name                   String
   restaurant_id            Int
   id                       String                     @id @default(uuid())
+  group_name               String
   newRestaurant            newRestaurant              @relation(fields: [restaurant_id], references: [restaurant_id])
   restaurant_new_SKU_items restaurant_new_SKU_items[]
 }
@@ -1352,28 +1354,28 @@ model restaurant_new_SKU_items {
   name                            String
   old_item_id                     BigInt?
   i_s_name                        String?
-  c_id                            String?
   group_category_id               String?
-  v_id                            String?
   restaurant_id                   Int
   isAdult                         String?
   isVeg                           String?
   id                              String                            @id @default(uuid())
+  category_id                     String?
+  variant_id                      String?
   OrderItem                       OrderItem[]
   non_chargeable_sales_entries_v2 non_chargeable_sales_entries_v2[]
   non_chargeable_sales_v2         non_chargeable_sales_v2[]
-  restaurant_new_SKU_category     restaurant_new_SKU_category?      @relation(fields: [c_id], references: [id])
+  restaurant_new_SKU_category     restaurant_new_SKU_category?      @relation(fields: [category_id], references: [id])
   restaurant_new_SKU_group        restaurant_new_SKU_group?         @relation(fields: [group_category_id], references: [id])
   customerType                    customerType?                     @relation(fields: [isAdult], references: [id])
   vegetarianMark                  vegetarianMark?                   @relation(fields: [isVeg], references: [id])
   newRestaurant                   newRestaurant                     @relation(fields: [restaurant_id], references: [restaurant_id])
-  restaurant_new_SKU_variants     restaurant_new_SKU_variants?      @relation(fields: [v_id], references: [id])
+  restaurant_new_SKU_variants     restaurant_new_SKU_variants?      @relation(fields: [variant_id], references: [id])
 }
 
 model restaurant_new_SKU_variants {
-  v_id                     BigInt
-  v_name                   String?
   id                       String                     @id @default(uuid())
+  variant_id               BigInt
+  variant_name             String?
   restaurant_new_SKU_items restaurant_new_SKU_items[]
 }
 
