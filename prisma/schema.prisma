@@ -31,9 +31,9 @@ model FoodTrialSpoilage {
 }
 
 model Order {
-  id                     Int           @id @unique @default(autoincrement())
+  id                     Int            @id @unique @default(autoincrement())
   restaurantID           Int
-  invoiceID              Int           @unique
+  invoiceID              Int            @unique
   paymentTypeID          Int
   orderTypeID            Int
   paymentStatus          String
@@ -52,7 +52,7 @@ model Order {
   VAT                    Float?
   createdAt              DateTime
   paymentType            String?
-  newRestaurant          newRestaurant @relation(fields: [restaurantID], references: [restaurant_id])
+  new_restaurant          new_restaurant @relation(fields: [restaurantID], references: [restaurant_id])
   OrderItem              OrderItem[]
 }
 
@@ -72,7 +72,7 @@ model OrderItem {
   packingCharge            Int                       @default(0)
   restaurant_new_SKU_items restaurant_new_SKU_items? @relation(fields: [item_id], references: [id])
   Order                    Order                     @relation(fields: [orderID], references: [id])
-  newRestaurant            newRestaurant             @relation(fields: [restaurantID], references: [restaurant_id])
+  new_restaurant            new_restaurant            @relation(fields: [restaurantID], references: [restaurant_id])
 }
 
 model admin_permissions {
@@ -83,6 +83,9 @@ model admin_permissions {
   updatedAt            DateTime
   enabled              Boolean       @default(true)
   isDeleted            Boolean       @default(false)
+  parent               Boolean       @default(false)
+  parentID             Int?
+  show                 Boolean       @default(true)
   admin_roles          admin_roles[] @relation("admin_permissionsToadmin_roles")
 }
 
@@ -714,6 +717,9 @@ model restaurant_permissions {
   updatedAt            DateTime
   enabled              Boolean            @default(true)
   isDeleted            Boolean            @default(false)
+  parent               Boolean            @default(false)
+  parentID             Int?
+  show                 Boolean            @default(true)
   restaurant_roles     restaurant_roles[] @relation("restaurant_permissionsTorestaurant_roles")
 }
 
@@ -1324,18 +1330,16 @@ model non_chargeable_sales_v2 {
 
 model restaurant_new_SKU_category {
   restaurant_id                   Int
-  isBuffet                        String?
   id                              String                            @id @default(uuid())
-  meal_type                       String?
-  buffetTypeId                    String?
   mealTypeId                      String?
   category_id                     BigInt
   category_name                   String
+  buffetTypeId                    Int?
   non_chargeable_sales_entries_v2 non_chargeable_sales_entries_v2[]
   non_chargeable_sales_v2         non_chargeable_sales_v2[]
-  buffetType                      buffetType?                       @relation(fields: [buffetTypeId], references: [id])
-  mealType                        mealType?                         @relation(fields: [mealTypeId], references: [id])
-  newRestaurant                   newRestaurant                     @relation(fields: [restaurant_id], references: [restaurant_id])
+  buffetType                      buffet_type?                      @relation(fields: [buffetTypeId], references: [id])
+  mealType                        meal_type?                        @relation(fields: [mealTypeId], references: [id])
+  new_restaurant                   new_restaurant                    @relation(fields: [restaurant_id], references: [restaurant_id])
   restaurant_new_SKU_items        restaurant_new_SKU_items[]
 }
 
@@ -1344,7 +1348,7 @@ model restaurant_new_SKU_group {
   restaurant_id            Int
   id                       String                     @id @default(uuid())
   group_name               String
-  newRestaurant            newRestaurant              @relation(fields: [restaurant_id], references: [restaurant_id])
+  new_restaurant            new_restaurant             @relation(fields: [restaurant_id], references: [restaurant_id])
   restaurant_new_SKU_items restaurant_new_SKU_items[]
 }
 
@@ -1366,9 +1370,9 @@ model restaurant_new_SKU_items {
   non_chargeable_sales_v2         non_chargeable_sales_v2[]
   restaurant_new_SKU_category     restaurant_new_SKU_category?      @relation(fields: [category_id], references: [id])
   restaurant_new_SKU_group        restaurant_new_SKU_group?         @relation(fields: [group_category_id], references: [id])
-  customerType                    customerType?                     @relation(fields: [isAdult], references: [id])
-  vegetarianMark                  vegetarianMark?                   @relation(fields: [isVeg], references: [id])
-  newRestaurant                   newRestaurant                     @relation(fields: [restaurant_id], references: [restaurant_id])
+  customerType                    customer_type?                    @relation(fields: [isAdult], references: [id])
+  vegetarianMark                  vegetarian_mark?                  @relation(fields: [isVeg], references: [id])
+  new_restaurant                   new_restaurant                    @relation(fields: [restaurant_id], references: [restaurant_id])
   restaurant_new_SKU_variants     restaurant_new_SKU_variants?      @relation(fields: [variant_id], references: [id])
 }
 
@@ -1379,9 +1383,29 @@ model restaurant_new_SKU_variants {
   restaurant_new_SKU_items restaurant_new_SKU_items[]
 }
 
-model newRestaurant {
+model buffet_type {
+  id                          Int                           @id
+  buffetTypeName              String
+  enabled                     Boolean                       @default(true)
+  restaurant_new_SKU_category restaurant_new_SKU_category[]
+}
+
+model customer_type {
+  id                       String                     @id
+  customerTypeName         String
+  enabled                  Boolean                    @default(true)
+  restaurant_new_SKU_items restaurant_new_SKU_items[]
+}
+
+model meal_type {
+  id                          String                        @id
+  mealTypeName                String
+  enabled                     Boolean                       @default(true)
+  restaurant_new_SKU_category restaurant_new_SKU_category[]
+}
+
+model new_restaurant {
   restaurant_id               Int                           @id @unique
-  isDeleted                   Boolean                       @default(false)
   Order                       Order[]
   OrderItem                   OrderItem[]
   restaurant_new_SKU_category restaurant_new_SKU_category[]
@@ -1389,31 +1413,10 @@ model newRestaurant {
   restaurant_new_SKU_items    restaurant_new_SKU_items[]
 }
 
-model buffetType {
-  id                          String                        @id
-  buffetTypeName              String
-  enabled                     Boolean
-  restaurant_new_SKU_category restaurant_new_SKU_category[]
-}
-
-model customerType {
-  id                       String                     @id
-  customerTypeName         String
-  enabled                  Boolean
-  restaurant_new_SKU_items restaurant_new_SKU_items[]
-}
-
-model mealType {
-  id                          String                        @id
-  mealTypeName                String
-  enabled                     Boolean
-  restaurant_new_SKU_category restaurant_new_SKU_category[]
-}
-
-model vegetarianMark {
+model vegetarian_mark {
   id                       String                     @id
   vegetarianMarkType       String
-  enabled                  Boolean
+  enabled                  Boolean                    @default(true)
   restaurant_new_SKU_items restaurant_new_SKU_items[]
 }
 
