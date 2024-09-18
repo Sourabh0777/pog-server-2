@@ -32,7 +32,17 @@ export const sendDataToDb = async (response: any) => {
             where: { restaurant_id: restaurantId, name: item.name },
           });
           let createItem = null;
-
+          if (itemExistsById || itemExistsByName) {
+            const existingItem = itemExistsById || itemExistsByName;
+            if (existingItem && parseInt(item.price) !== existingItem.price) {
+              await prisma.restaurant_new_SKU_items.update({
+                where: { id: existingItem.id },
+                data: {
+                  price: parseInt(item.price),
+                },
+              });
+            }
+          }
           if (!itemExistsById && !itemExistsByName) {
             const item_extra_data = JSON.parse(item.item_extra_data);
             if (!item_extra_data) {

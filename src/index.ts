@@ -60,7 +60,7 @@ const receiveMessage = async () => {
 
       //Code To be deleted Later
       const filePaths = getAllFilePaths(downloadsDir);
-      const response2 = await getDataFromFile(filePaths[0]);
+      const response2 = await getDataFromFile(filePaths[4]);
       //
       const fileProcessingStatus = await sendDataToDb(response2);
       console.log(fileProcessingStatus);
