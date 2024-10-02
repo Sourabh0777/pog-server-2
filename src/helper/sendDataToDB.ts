@@ -129,28 +129,62 @@ export const sendDataToDb = async (response: any) => {
         return item !== null && item !== undefined;
       });
 
+      let find_order_payment_type;
+      const paymentType = await Order.payment_type.toString();
+      if (paymentType === '1' || paymentType === '2' || paymentType === '3' || paymentType === '9') {
+        find_order_payment_type = await prisma.order_payment_type.findFirst({ where: { id: '1' } });
+      } else {
+        find_order_payment_type = await prisma.order_payment_type.findFirst({ where: { id: paymentType } });
+      }
+
+      // Find order
+      let new_order_type;
+      const orderType = await Order.order_type.toString();
+      if (orderType === '1' || orderType === '2') {
+        new_order_type = await prisma.new_order_type.findFirst({ where: { id: '1' } });
+      } else {
+        new_order_type = await prisma.new_order_type.findFirst({ where: { id: orderType } });
+      }
+
+      let restaurant_area;
+      restaurant_area = await prisma.restaurant_area.findFirst({ where: { id: Order.restaurant_area_id.toString() } });
+      if (!restaurant_area) {
+        restaurant_area = await prisma.restaurant_area.create({ data: { id: Order.restaurant_area_id.toString() } });
+      }
+      if (!restaurant_area) {
+        return; // Optionally add an error response or log here
+      }
+      if (!find_order_payment_type) {
+        return; // Optionally add an error response or log here
+      }
+
+      if (!new_order_type) {
+        return; // Optionally add an error response or log here
+      }
       // Create Order
       const createdOrder = await prisma.order.create({
         data: {
-          restaurantID: parseInt(Order.restaurant_id),
-          invoiceID: parseInt(Order.invoice_id),
-          paymentTypeID: parseInt(Order.payment_type),
-          orderTypeID: parseInt(Order.order_type),
-          createdAt: new Date(Order.created_date),
-          paymentStatus: Order.payment_confirmation,
-          cancelReason: Order.cancel_order_description || null,
-          orderAmount: parseFloat(Order.core_price),
+          restaurant_id: parseInt(Order.restaurant_id),
+          invoice_id: parseInt(Order.invoice_id),
+          restaurant_area_id: restaurant_area.id,
+          order_payment_type_id: find_order_payment_type.id,
+          new_order_type_id: new_order_type?.id,
+          created_at: new Date(Order.created_date),
+          payment_status: Order.payment_confirmation,
+          cancel_reason: Order.cancel_order_description || null,
+          order_amount: parseFloat(Order.core_price),
           discount: parseFloat(Order.discount),
-          netAmountAfterDiscount: -parseFloat(Order.total),
-          containerCharges: parseFloat(Order.packing_charge),
-          deliveryCharges: parseFloat(Order.delivery_charge),
-          serviceCharges: parseFloat(Order.service_charge),
-          totalTax: parseFloat(Order.tax),
-          totalAmount: parseFloat(Order.total),
-          nonTaxableAmount: parseFloat(Order.old_total),
+          net_amount_after_discount: parseFloat(Order.total),
+          packing_charge: parseFloat(Order.packing_charge),
+          delivery_charges: parseFloat(Order.delivery_charge),
+          service_charges: parseFloat(Order.service_charge),
+          total_tax: parseFloat(Order.tax),
+          total_amount: parseFloat(Order.total),
+          non_taxable_amount: parseFloat(Order.old_total),
           CGST: parseFloat(Order.tax),
           SGST: parseFloat(Order.tax),
           VAT: parseFloat(Order.tax),
+          table_no: parseFloat(Order.table_no),
           OrderItem: {
             create: array.map((item: any) => item),
           },
