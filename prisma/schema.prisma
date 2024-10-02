@@ -57,7 +57,7 @@ model Order {
   order_payment_type        order_payment_type? @relation(fields: [order_payment_type_id], references: [id])
   restaurant_area           restaurant_area?    @relation(fields: [restaurant_area_id], references: [id])
   new_restaurant            new_restaurant      @relation(fields: [restaurant_id], references: [restaurant_id])
-  OrderItem                     OrderItem[]
+  OrderItem                 OrderItem[]
 }
 
 model OrderItem {
@@ -138,6 +138,9 @@ model admin_users {
   forcasted_pax_forcasted_pax_approvedByAdminUserIDToadmin_users                                     forcasted_pax[]                   @relation("forcasted_pax_approvedByAdminUserIDToadmin_users")
   forcasted_pax_forcasted_pax_createdByAdminUserIDToadmin_users                                      forcasted_pax[]                   @relation("forcasted_pax_createdByAdminUserIDToadmin_users")
   forcasted_pax_forcasted_pax_updatedByAdminUserIDToadmin_users                                      forcasted_pax[]                   @relation("forcasted_pax_updatedByAdminUserIDToadmin_users")
+  fuel_budget_fuel_budget_approvedByAdminUserIDToadmin_users                                         fuel_budget[]                     @relation("fuel_budget_approvedByAdminUserIDToadmin_users")
+  fuel_budget_fuel_budget_createdByAdminUserIDToadmin_users                                          fuel_budget[]                     @relation("fuel_budget_createdByAdminUserIDToadmin_users")
+  fuel_budget_fuel_budget_updatedByAdminUserIDToadmin_users                                          fuel_budget[]                     @relation("fuel_budget_updatedByAdminUserIDToadmin_users")
   gas_readings_gas_readings_admin_usersIdToadmin_users                                               gas_readings[]                    @relation("gas_readings_admin_usersIdToadmin_users")
   gas_readings_gas_readings_approvedByAdminUserIDToadmin_users                                       gas_readings[]                    @relation("gas_readings_approvedByAdminUserIDToadmin_users")
   gas_readings_gas_readings_createdByAdminUserIDToadmin_users                                        gas_readings[]                    @relation("gas_readings_createdByAdminUserIDToadmin_users")
@@ -381,6 +384,7 @@ model non_chargeable_sale_categories {
   approvedByAdminUserID                                                              String?
   createdByAdminUserID                                                               String?
   updatedByAdminUserID                                                               String?
+  type                                                                               Type                      @default(food_cost)
   admin_users_non_chargeable_sale_categories_approvedByAdminUserIDToadmin_users      admin_users?              @relation("non_chargeable_sale_categories_approvedByAdminUserIDToadmin_users", fields: [approvedByAdminUserID], references: [id], onDelete: Cascade)
   restaurant_users_non_chargeable_sale_categories_approvedByUserIDTorestaurant_users restaurant_users?         @relation("non_chargeable_sale_categories_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id], onDelete: Cascade)
   admin_users_non_chargeable_sale_categories_createdByAdminUserIDToadmin_users       admin_users?              @relation("non_chargeable_sale_categories_createdByAdminUserIDToadmin_users", fields: [createdByAdminUserID], references: [id], onDelete: Cascade)
@@ -614,6 +618,7 @@ model restaurant {
   budgeted_pax                                               budgeted_pax[]
   document_uploads_tracking_table                            document_uploads_tracking_table[]
   forcasted_pax                                              forcasted_pax[]
+  fuel_budget                                                fuel_budget[]
   hr_payroll_data                                            hr_payroll_data[]
   restaurant_users_restaurant_chefIDTorestaurant_users       restaurant_users?                 @relation("restaurant_chefIDTorestaurant_users", fields: [chefID], references: [id])
   restaurant_users_restaurant_storeIDTorestaurant_users      restaurant_users?                 @relation("restaurant_storeIDTorestaurant_users", fields: [storeID], references: [id])
@@ -773,6 +778,7 @@ model restaurant_issued_items {
   purchaseId                    String?
   storeSKUSectionID             String?
   isDeleted                     Boolean                       @default(false)
+  amount                        Int                           @default(0)
   store_purchase                store_purchase?               @relation(fields: [purchaseId], references: [id])
   restaurant_recquisition_items restaurant_recquisition_items @relation(fields: [restaurantRecquisitionItemID], references: [id])
   restaurant_issues             restaurant_issues?            @relation(fields: [restaurant_issuesId], references: [id])
@@ -902,6 +908,9 @@ model restaurant_users {
   forcasted_pax_forcasted_pax_approvedByUserIDTorestaurant_users                                     forcasted_pax[]                   @relation("forcasted_pax_approvedByUserIDTorestaurant_users")
   forcasted_pax_forcasted_pax_createdByUserIDTorestaurant_users                                      forcasted_pax[]                   @relation("forcasted_pax_createdByUserIDTorestaurant_users")
   forcasted_pax_forcasted_pax_updatedByUserIDTorestaurant_users                                      forcasted_pax[]                   @relation("forcasted_pax_updatedByUserIDTorestaurant_users")
+  fuel_budget_fuel_budget_approvedByUserIDTorestaurant_users                                         fuel_budget[]                     @relation("fuel_budget_approvedByUserIDTorestaurant_users")
+  fuel_budget_fuel_budget_createdByUserIDTorestaurant_users                                          fuel_budget[]                     @relation("fuel_budget_createdByUserIDTorestaurant_users")
+  fuel_budget_fuel_budget_updatedByUserIDTorestaurant_users                                          fuel_budget[]                     @relation("fuel_budget_updatedByUserIDTorestaurant_users")
   gas_readings_gas_readings_approvedByUserIDTorestaurant_users                                       gas_readings[]                    @relation("gas_readings_approvedByUserIDTorestaurant_users")
   gas_readings_gas_readings_createdByUserIDTorestaurant_users                                        gas_readings[]                    @relation("gas_readings_createdByUserIDTorestaurant_users")
   gas_readings_gas_readings_restaurantUserIDTorestaurant_users                                       gas_readings[]                    @relation("gas_readings_restaurantUserIDTorestaurant_users")
@@ -1101,6 +1110,7 @@ model store_SKU_sections {
   approvedByAdminUserID                                                  String?
   createdByAdminUserID                                                   String?
   updatedByAdminUserID                                                   String?
+  type                                                                   StoreSectionType          @default(food)
   restaurant_issued_items                                                restaurant_issued_items[]
   store_SKU_items                                                        store_SKU_items[]
   admin_users_store_SKU_sections_approvedByAdminUserIDToadmin_users      admin_users?              @relation("store_SKU_sections_approvedByAdminUserIDToadmin_users", fields: [approvedByAdminUserID], references: [id], onDelete: Cascade)
@@ -1648,6 +1658,8 @@ model order_payment_type {
   id                          String                        @id
   order_type_name             String
   enabled                     Boolean                       @default(true)
+  custom_payment_type         String
+  payment_type                Int
   Order                       Order[]
   restaurant_new_SKU_category restaurant_new_SKU_category[]
 }
@@ -1656,6 +1668,30 @@ model restaurant_area {
   id      String  @id
   enabled Boolean @default(true)
   Order   Order[]
+}
+
+model fuel_budget {
+  id                                                              String            @id
+  monthIndex                                                      Int
+  year                                                            Int
+  budgetAmount                                                    Int
+  restaurantID                                                    String
+  createdByUserID                                                 String?
+  updatedByUserID                                                 String?
+  approvedByUserID                                                String?
+  createdAt                                                       DateTime          @default(now())
+  updatedAt                                                       DateTime
+  isDeleted                                                       Boolean           @default(false)
+  createdByAdminUserID                                            String?
+  updatedByAdminUserID                                            String?
+  approvedByAdminUserID                                           String?
+  admin_users_fuel_budget_approvedByAdminUserIDToadmin_users      admin_users?      @relation("fuel_budget_approvedByAdminUserIDToadmin_users", fields: [approvedByAdminUserID], references: [id], onDelete: Cascade)
+  restaurant_users_fuel_budget_approvedByUserIDTorestaurant_users restaurant_users? @relation("fuel_budget_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id], onDelete: Cascade)
+  admin_users_fuel_budget_createdByAdminUserIDToadmin_users       admin_users?      @relation("fuel_budget_createdByAdminUserIDToadmin_users", fields: [createdByAdminUserID], references: [id], onDelete: Cascade)
+  restaurant_users_fuel_budget_createdByUserIDTorestaurant_users  restaurant_users? @relation("fuel_budget_createdByUserIDTorestaurant_users", fields: [createdByUserID], references: [id], onDelete: Cascade)
+  restaurant                                                      restaurant        @relation(fields: [restaurantID], references: [id])
+  admin_users_fuel_budget_updatedByAdminUserIDToadmin_users       admin_users?      @relation("fuel_budget_updatedByAdminUserIDToadmin_users", fields: [updatedByAdminUserID], references: [id], onDelete: Cascade)
+  restaurant_users_fuel_budget_updatedByUserIDTorestaurant_users  restaurant_users? @relation("fuel_budget_updatedByUserIDTorestaurant_users", fields: [updatedByUserID], references: [id], onDelete: Cascade)
 }
 
 enum Category {
@@ -1730,4 +1766,14 @@ enum OrderTypeEnum {
   dine_in
   delivery
   pickup
+}
+
+enum StoreSectionType {
+  food
+  fuel
+}
+
+enum Type {
+  food_cost
+  soft_beverages_cost
 }
