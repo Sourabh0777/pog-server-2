@@ -53,6 +53,8 @@ model Order {
   table_no                  Int?
   total_amount              Float?
   total_tax                 Float?
+  custom_payment_type       String?
+  payment_type              Int?
   new_order_type            new_order_type?     @relation(fields: [new_order_type_id], references: [id])
   order_payment_type        order_payment_type? @relation(fields: [order_payment_type_id], references: [id])
   restaurant_area           restaurant_area?    @relation(fields: [restaurant_area_id], references: [id])
@@ -1655,11 +1657,9 @@ model new_order_type {
 }
 
 model order_payment_type {
-  id                          String                        @id
+  id                          String                        @id @default(uuid())
   order_type_name             String
   enabled                     Boolean                       @default(true)
-  custom_payment_type         String
-  payment_type                Int
   Order                       Order[]
   restaurant_new_SKU_category restaurant_new_SKU_category[]
 }
