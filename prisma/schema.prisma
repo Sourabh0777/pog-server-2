@@ -758,6 +758,7 @@ model restaurant_expenses {
   approvedByAdminUserID                                                   String?
   createdByAdminUserID                                                    String?
   updatedByAdminUserID                                                    String?
+  expenseDate                                                             DateTime                    @default(now())
   admin_users_restaurant_expenses_approvedByAdminUserIDToadmin_users      admin_users?                @relation("restaurant_expenses_approvedByAdminUserIDToadmin_users", fields: [approvedByAdminUserID], references: [id], onDelete: Cascade)
   restaurant_users_restaurant_expenses_approvedByUserIDTorestaurant_users restaurant_users?           @relation("restaurant_expenses_approvedByUserIDTorestaurant_users", fields: [approvedByUserID], references: [id])
   admin_users_restaurant_expenses_createdByAdminUserIDToadmin_users       admin_users?                @relation("restaurant_expenses_createdByAdminUserIDToadmin_users", fields: [createdByAdminUserID], references: [id], onDelete: Cascade)
