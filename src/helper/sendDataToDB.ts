@@ -185,8 +185,8 @@ export const sendDataToDb = async (response: any) => {
           SGST: parseFloat(Order.tax),
           VAT: parseFloat(Order.tax),
           table_no: parseFloat(Order.table_no),
-          custom_payment_type:Order.custom_payment_type,
-          payment_type:parseFloat(Order.payment_type),
+          custom_payment_type: Order.custom_payment_type,
+          payment_type: parseFloat(Order.payment_type),
           OrderItem: {
             create: array.map((item: any) => item),
           },
