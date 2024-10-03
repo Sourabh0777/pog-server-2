@@ -119,6 +119,7 @@ export const sendDataToDb = async (response: any) => {
             restaurantID: restaurantId,
             createdAt: new Date(Order.created_date),
             packingCharge: parseInt(item.packing_charge),
+            NCFlag: parseInt(item.price) === 0 ? true : false,
           };
         })
       );
