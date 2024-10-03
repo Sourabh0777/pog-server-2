@@ -43,6 +43,7 @@
     "envalid": "^8.0.0",
     "express": "^4.19.2",
     "kafkajs": "^2.2.4",
-    "nodejs-file-downloader": "^4.13.0"
+    "nodejs-file-downloader": "^4.13.0",
+    "rimraf": "^6.0.1"
   }
 }
