@@ -1,99 +1,91 @@
-import express from 'express';
-import { env } from './config/envValidate';
-
-import { ReceiveMessageCommand } from '@aws-sdk/client-sqs';
-import { error } from 'console';
+import { DeleteMessageCommand, ReceiveMessageCommand } from '@aws-sdk/client-sqs';
 import 'dotenv/config';
+import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
-import { getAllFilePaths } from './config/readFilePath';
+import { env } from './config/envValidate';
 import { getSignedFileUrl, queueURL, sqsClient } from './constants/AWS';
 import { downloader } from './helper/downloader';
 import { getDataFromFile } from './helper/getDataFromFile';
 import { sendDataToDb } from './helper/sendDataToDB';
+
 const app = express();
 const downloadsDir = path.join(__dirname, 'downloads');
 
+// Function to receive and process a message from the SQS queue
 const receiveMessage = async () => {
+  // Parameters for SQS receiveMessage API
   const params = {
-    QueueUrl: queueURL,
-    MaxNumberOfMessages: 1,
-    VisibilityTimeout: 500,
-    WaitTimeSeconds: 0,
+    QueueUrl: queueURL, // The URL of the SQS queue to poll messages from
+    MaxNumberOfMessages: 1, // Process one message at a time (adjust if needed)
+    VisibilityTimeout: 500, // How long to keep the message hidden from other consumers (in seconds)
+    WaitTimeSeconds: 0, // No long polling; return immediately if no messages are available
   };
+
   try {
+    // Receive a message from SQS
     const command = new ReceiveMessageCommand(params);
     const data = await sqsClient.send(command);
-    const Messages = data.Messages;
-    if (Messages && Messages[0].Body) {
-      const body = await JSON.parse(Messages[0].Body);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const MessageId = Messages[0].MessageId;
-      const receiptHandle = Messages[0].ReceiptHandle;
+    const Messages = data.Messages; // Array of messages received
 
-      // const region = body.Records[0].awsRegion;
+    if (Messages && Messages[0].Body) {
+      // Parse the message body (assuming it's JSON formatted)
+      const body = JSON.parse(Messages[0].Body);
+      const receiptHandle = Messages[0].ReceiptHandle; // To delete the message after processing
+
+      // Get the bucket name and object key from the message (S3 event notification)
       const bucketName = body.Records[0].s3.bucket.name;
       const objectKey = body.Records[0].s3.object.key;
 
-      // Fetch the URL
-      // const URL = `https://${bucketName}.s3.${region}.amazonaws.com/${objectKey}`;
-
-      // Get Signed URL from S3
+      // Get a signed URL for the S3 object (allows us to download it)
       const result = await getSignedFileUrl(objectKey, bucketName);
 
-      // Download File from the URL
+      // Download the file from the S3 signed URL
       const { filePath } = await downloader(result);
-      // console.log('🚀 ~ receiveMessage ~ filePath, downloadStatus:', filePath, downloadStatus);
       if (!filePath) {
-        throw error;
+        throw new Error('Failed to download file');
       }
 
-      // From the filePath get all the data from the file into a variable
-      // Download file's data will be converted in jSON and stored in a variable response
+      // Read the contents of the downloaded file
       const response = await getDataFromFile(filePath);
       if (!response) {
-        throw error;
+        throw new Error('Failed to extract data from file');
       }
 
-      // Fetch important data from the object
-      // Save the data in the database
-
-      //Code To be deleted Later
-      const filePaths = getAllFilePaths(downloadsDir);
-      const response2 = await getDataFromFile(filePaths[0]);
-      //
-      const fileProcessingStatus = await sendDataToDb(response2);
+      // Send the extracted data to the database for storage
+      const fileProcessingStatus = await sendDataToDb(response);
       console.log(fileProcessingStatus);
 
       if (!fileProcessingStatus) {
         throw new Error('Failed to send data to database');
       }
 
-      // Delete The notification
-      // const deleteParams = {
-      //   QueueUrl: queueURL,
-      //   ReceiptHandle: receiptHandle,
-      // };
-      // const deleteCommand = new DeleteMessageCommand(deleteParams);
-      // await sqsClient.send(deleteCommand);
-      // console.log('Message deleted from the queue');
+      // After successful processing, delete the message from the SQS queue
+      const deleteParams = {
+        QueueUrl: queueURL,
+        ReceiptHandle: receiptHandle, // Use receipt handle to delete the exact message
+      };
+      const deleteCommand = new DeleteMessageCommand(deleteParams);
+      await sqsClient.send(deleteCommand);
+      console.log('Message deleted from the queue');
 
-      // If the Notification is deleted then delete the file present in my local
+      // Delete the local file after processing it successfully
       await fs.unlink(filePath);
       console.log('File deleted from local storage');
-
-      // If file was completely downloaded, processed and delted then get the next notification in the queue and process that. and keep this server running
     }
   } catch (err) {
-    console.log('Receive Error', err);
+    console.log('Receive Error', err); // Log any errors encountered during message processing
   } finally {
-    // Call receiveMessage again to poll for the next message
-    // setTimeout(receiveMessage, 10000);
+    // Call receiveMessage again to poll for the next message after processing the current one
+    // This ensures continuous polling after each message has been fully processed
+    await receiveMessage(); // Call the function recursively (poll continuously without delay)
   }
 };
-// Continuously poll for new messages
+
+// Start polling messages
 receiveMessage();
 
+// Start Express server to listen for incoming requests (if needed)
 app.listen(env.PORT, () => {
   console.log(`listening to port ${env.PORT}`);
 });

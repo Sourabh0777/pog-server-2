@@ -89,7 +89,6 @@ export const sendDataToDb = async (response: any) => {
               if (!checkVarientExists) {
                 const variant = { variant_id: parseInt(item_extra_data.v_id), variant_name: item_extra_data.v_name };
                 createVarient = await prisma.restaurant_new_SKU_variants.create({ data: variant });
-                console.log('🚀 ~ orderData.OrderItem.map ~ createVarient:', createVarient);
               }
             }
             //Create  Item
