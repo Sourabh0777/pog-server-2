@@ -96,6 +96,7 @@ export const sendDataToDb = async (response: any) => {
               data: {
                 item_id: parseInt(item.item_id),
                 price: parseInt(item.price),
+                ncFlag: parseInt(item.price) === 0 ? true : false,
                 name: item.name,
                 restaurant_id: restaurantId,
                 old_item_id: parseInt(item.old_item_id),

@@ -1547,6 +1547,7 @@ model restaurant_new_SKU_items {
   id                              String                            @id @default(uuid())
   category_id                     String?
   variant_id                      String?
+  ncFlag                          Boolean                           @default(false)
   OrderItem                       OrderItem[]
   non_chargeable_sales_entries_v2 non_chargeable_sales_entries_v2[]
   non_chargeable_sales_v2         non_chargeable_sales_v2[]
