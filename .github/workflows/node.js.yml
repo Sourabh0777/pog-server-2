@@ -25,7 +25,6 @@ jobs:
       - run: npx prisma generate
       - run: npm run build
 
-      # Use the GitHub secret to create the .env file
       - name: Create .env file from secret
         run: |
           echo "${{ secrets.PROD_ENV_FILE }}" > .env
@@ -33,7 +32,6 @@ jobs:
 
       - name: Print .env file for verification
         run: cat .env
-        shell: bash
 
       - name: Reload PM2 with updated environment
         run: |
