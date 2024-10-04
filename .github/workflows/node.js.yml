@@ -25,13 +25,20 @@ jobs:
       - run: npx prisma generate
       - run: npm run build
 
+      - name: Debug Raw Secret Value
+        run: |
+           echo "${{ secrets.PROD_ENV_FILE }}"
+
       - name: Create .env file from secret
         run: |
-          printf "%s\n" "${{ secrets.PROD_ENV_FILE }}" > .env
+          cat <<EOF > .env
+          ${{ secrets.PROD_ENV_FILE }}
+          EOF
         shell: bash
 
       - name: Print .env file for verification
         run: cat .env
+        shell: bash
 
       - name: Reload PM2 with updated environment
         run: |
