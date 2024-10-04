@@ -28,5 +28,5 @@ jobs:
       - run: npm run build
       - run: |
           touch .env
-           echo "${{ secrets.ENV_VARIABLES}}" | tr ' ' '\n' > .env
+           echo "${{ secrets.PROD_ENV_FILE }}" | tr ' ' '\n' > .env
       - run: pm2 restart BackendAPI
