@@ -31,7 +31,20 @@ jobs:
         shell: bash
 
       - name: Print .env file for verification
-        run: cat .env
+        run: |
+          echo "DATABASE_URL: $DATABASE_URL"
+          echo "DIRECT_URL: $DIRECT_URL"
+          echo "DBPASSWORD: $DBPASSWORD"
+          echo "AWS_REGION: $AWS_REGION"
+          echo "QUEUE_URL: $QUEUE_URL"
+          echo "PORT: $PORT"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          DBPASSWORD: ${{ secrets.DBPASSWORD }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          QUEUE_URL: ${{ secrets.QUEUE_URL }}
+          PORT: ${{ secrets.PORT }}
 
       - name: Reload PM2 with updated environment
         run: |
