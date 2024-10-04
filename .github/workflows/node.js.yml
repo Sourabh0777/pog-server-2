@@ -25,12 +25,18 @@ jobs:
       - run: npx prisma generate
       - run: npm run build
 
-      - name: Create .env file from secret
+         - name: Set up environment
         run: |
-          echo "${{ secrets.PROD_ENV_FILE }}" > .env
-        shell: bash
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+          echo "DIRECT_URL=${{ secrets.DIRECT_URL }}" >> .env
+          echo "DBPASSWORD=${{ secrets.DBPASSWORD }}" >> .env
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
+          echo "QUEUE_URL=${{ secrets.QUEUE_URL }}" >> .env
+          echo "PORT=${{ secrets.PORT }}" >> .env
 
-      - name: Print .env file for verification
+      - name: Display environment variables (for debugging)
         run: |
           echo "DATABASE_URL: $DATABASE_URL"
           echo "DIRECT_URL: $DIRECT_URL"
@@ -48,4 +54,4 @@ jobs:
 
       - name: Reload PM2 with updated environment
         run: |
-          pm2 reload BackendAPI --update-env
+          pm2 reload BackendAPI 
