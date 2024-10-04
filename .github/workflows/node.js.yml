@@ -27,8 +27,13 @@ jobs:
 
       - name: Create .env file from secret
         run: |
-          echo "${{ secrets.PROD_ENV_FILE }}" | tr ' ' '\n' > .env
-          cat .env  # Print the contents of the .env file for verification
+          cat <<EOF > .env
+          ${{ secrets.PROD_ENV_FILE }}
+          EOF
+        shell: bash
+
+      - name: Print .env file for verification
+        run: cat .env
 
       - name: Reload PM2 with updated environment
         run: |
