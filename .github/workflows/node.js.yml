@@ -1,4 +1,4 @@
-name: Node.js CI/CD 
+name: Node.js CI/CD
 
 on:
   push:
@@ -25,15 +25,10 @@ jobs:
       - run: npx prisma generate
       - run: npm run build
 
-      - name: Debug Raw Secret Value
-        run: |
-           echo "${{ secrets.PROD_ENV_FILE }}"
-
+      # Use the GitHub secret to create the .env file
       - name: Create .env file from secret
         run: |
-          cat <<EOF > .env
-          ${{ secrets.PROD_ENV_FILE }}
-          EOF
+          echo "${{ secrets.PROD_ENV_FILE }}" > .env
         shell: bash
 
       - name: Print .env file for verification
