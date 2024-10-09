@@ -1,7 +1,4 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
-name: Node.js CI/CD 
+name: Node.js CI/CD
 
 on:
   push:
@@ -14,19 +11,47 @@ jobs:
     strategy:
       matrix:
         node-version: [20.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
       - uses: actions/checkout@v4
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
+
       - run: npm install
       - run: npx prisma generate
       - run: npm run build
-      - run: |
-          touch .env
-           echo "${{ secrets.ENV_VARIABLES}}" | tr ' ' '\n' > .env
-      - run: pm2 restart BackendAPI
+
+      - name: Set up environment
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+          echo "DIRECT_URL=${{ secrets.DIRECT_URL }}" >> .env
+          echo "DBPASSWORD=${{ secrets.DBPASSWORD }}" >> .env
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
+          echo "QUEUE_URL=${{ secrets.QUEUE_URL }}" >> .env
+          echo "PORT=${{ secrets.PORT }}" >> .env
+
+      - name: Display environment variables (for debugging)
+        run: |
+          echo "DATABASE_URL: $DATABASE_URL"
+          echo "DIRECT_URL: $DIRECT_URL"
+          echo "DBPASSWORD: $DBPASSWORD"
+          echo "AWS_REGION: $AWS_REGION"
+          echo "QUEUE_URL: $QUEUE_URL"
+          echo "PORT: $PORT"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          DBPASSWORD: ${{ secrets.DBPASSWORD }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          QUEUE_URL: ${{ secrets.QUEUE_URL }}
+          PORT: ${{ secrets.PORT }}
+
+      - name: Reload PM2 with updated environment
+        run: |
+          pm2 restart BackendAPI 
