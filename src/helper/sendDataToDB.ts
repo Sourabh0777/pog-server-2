@@ -5,6 +5,12 @@ export const sendDataToDb = async (response: any) => {
   try {
     for (const orderData of response) {
       const { Order, OrderItem } = orderData;
+      const checkOrderExists = await prisma.order.findUnique({ where: { invoice_id: parseInt(Order.invoice_id) } });
+      if (checkOrderExists) {
+        console.log(`Skippingn Order as invoice_id already exists`);
+        return;
+      }
+
       // Validate and filter OrderItems
       let array = await Promise.all(
         OrderItem.map(async (item: any) => {
